@@ -27,8 +27,13 @@ public class HelloApplication extends Application {
         Node c = graph.addNode("C");
 
         a.addEdge(new Edge(new Pair<>(a, true), new Pair<>(b, true), 0));
+        a.addEdge(new Edge(new Pair<>(a, true), new Pair<>(c, true), 0));
         b.addEdge(new Edge(new Pair<>(b, false), new Pair<>(c, true), 0));
         c.addEdge(new Edge(new Pair<>(c, false), new Pair<>(a, true), 0));
+
+        graph.removeNode("A");
+
+        //ToDo when remove node, it should get removed from other edges too (see C that is still connected to A)
 
         System.out.println(graph.getGraph());
 

@@ -1,7 +1,5 @@
 package com.example.graphenprogramm;
 
-import javafx.util.Pair;
-
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -46,6 +44,8 @@ public class Graph
                 }
 
                 output += edge.node2.getKey().name;
+
+                output += " | ";
             }
 
             output += "\n";
