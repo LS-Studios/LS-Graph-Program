@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1000.0" style="-fx-background-color: #34495e;" stylesheets="@Styles/MyStyles.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.graphenprogramm.Controller">
+   <children>
+      <AnchorPane fx:id="pane" minHeight="0.0" minWidth="0.0"
+                  onMousePressed="#onGraphPressed"
+                  onDragDetected="#onGraphDragDetected"
+                  onMouseDragged="#onGraphDragged"
+                  onMouseReleased="#onGraphReleased"
+                  style="-fx-background-color: #f5f6fa;">
+         <children>
+            <GridPane fx:id="bgGrid" gridLinesVisible="true" opacity="0.1" prefHeight="2000.0" prefWidth="2000.0" translateX="-100.0">
+               <columnConstraints>
+                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+               </columnConstraints>
+            </GridPane>
+         </children>
+      </AnchorPane>
+   </children>
+</VBox>

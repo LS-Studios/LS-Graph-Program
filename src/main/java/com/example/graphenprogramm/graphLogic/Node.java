@@ -1,4 +1,4 @@
-package com.example.graphenprogramm;
+package com.example.graphenprogramm.graphLogic;
 
 import java.util.ArrayList;
 
@@ -13,5 +13,9 @@ public class Node {
     public Edge addEdge(Edge edgeToAdd) {
         edges.add(edgeToAdd);
         return edgeToAdd;
+    }
+
+    public void removeEdge(Edge edgeToRemove) {
+        edges.remove(edgeToRemove);
     }
 }

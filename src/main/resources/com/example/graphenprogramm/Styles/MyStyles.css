@@ -1,0 +1,44 @@
+.nodeStyle {
+    -fx-font-size: 15;
+    -fx-font-weight: bold;
+    -fx-padding: 0 5 0 5;
+
+    -fx-background-color: white;
+    -fx-background-radius: 22;
+
+    -fx-border-color: black;
+    -fx-border-width: 2;
+    -fx-border-radius: 22;
+}
+
+.weightStyle {
+    -fx-text-fill: white;
+    -fx-font-size: 15;
+    -fx-font-weight: bold;
+    -fx-padding: 0 10 0 10;
+
+    -fx-background-color: grey;
+    -fx-background-radius: 12;
+}
+
+.draggedOver {
+    -fx-background-color: yellow;
+}
+
+.draggedOverError {
+    -fx-background-color: red;
+}
+
+.selected {
+    -fx-border-color: blue;
+    -fx-border-radius: 22;
+}
+
+.edge {
+    -fx-stroke: black;
+}
+
+.arrow {
+    -fx-stroke: black;
+    -fx-stroke-width: 2;
+}
