@@ -18,4 +18,8 @@ public class Node {
     public void removeEdge(Edge edgeToRemove) {
         edges.remove(edgeToRemove);
     }
+
+    public void setName(String newName) {
+        name = newName;
+    }
 }

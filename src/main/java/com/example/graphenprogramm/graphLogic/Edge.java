@@ -5,7 +5,7 @@ import javafx.util.Pair;
 public class Edge {
     public Pair<Node, Boolean> node1;
     public Pair<Node, Boolean> node2;
-    public float length;
+    public double length;
 
     public Edge(Pair<Node, Boolean> node1, Pair<Node, Boolean> node2, float length) {
         this.node1 = node1;

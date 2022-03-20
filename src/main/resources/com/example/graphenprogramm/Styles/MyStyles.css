@@ -42,3 +42,11 @@
     -fx-stroke: black;
     -fx-stroke-width: 2;
 }
+
+.popUpPane {
+    -fx-background-radius:  22;
+    -fx-background-color:  #ecf0f1;
+    -fx-border-radius:  22;
+    -fx-border-color: black;
+    -fx-border-width: 1.5;
+}

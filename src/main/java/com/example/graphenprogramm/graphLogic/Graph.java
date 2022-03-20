@@ -8,7 +8,7 @@ import java.util.Objects;
 
 public class Graph
 {
-    public  ArrayList<Node> nodes = new ArrayList<>();
+    public ArrayList<Node> nodes = new ArrayList<>();
 
     public Node addNode(String nodeName) {
         Node newNode = new Node(nodeName);
@@ -18,15 +18,6 @@ public class Graph
 
     public void removeNode(Node nodeToRemove) {
         nodes.remove(nodeToRemove);
-    }
-
-    public Node getNode(String nodeName) {
-        for (Node node : nodes) {
-            if (Objects.equals(node.name, nodeName)) {
-                return node;
-            }
-        }
-        return  null;
     }
 
     public Edge addEdge(Node node1, Node node2) {
@@ -44,7 +35,8 @@ public class Graph
         }
     }
 
-    public String getGraph() {
+    @Override
+    public String toString() {
         String output = "";
 
         for (Node node : nodes) {
@@ -57,7 +49,7 @@ public class Graph
                             output += " <";
                         }
 
-                        output += " - ";
+                        output += " -(" + edge.length + ")- ";
 
                         if (edge.node2.getValue()) {
                             output += "> ";
@@ -70,12 +62,11 @@ public class Graph
                             output += " <";
                         }
 
-                        output += " - ";
+                        output += " -(" + edge.length + ")- ";
 
                         if (edge.node1.getValue()) {
                             output += "> ";
                         }
-
 
                         output += edge.node1.getKey().name;
                     }
@@ -86,8 +77,6 @@ public class Graph
 
             output += "\n";
         }
-
-        System.out.println(output);
         return output;
     }
 }

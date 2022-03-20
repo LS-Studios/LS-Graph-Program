@@ -10,6 +10,8 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Polyline;
 
+import java.util.ArrayList;
+
 public class EdgeUI extends Group {
     public Edge EDGE;
 
@@ -49,22 +51,25 @@ public class EdgeUI extends Group {
         this.node1 = node1;
         this.node2 = node2;
 
+        //Set edge up
         getChildren().addAll(edge, arrowA, arrowB);
 
         for (SimpleDoubleProperty s : new SimpleDoubleProperty[] {this.x1, this.y1, this.x2, this.y2}) {
             s.addListener( (l, o, n) -> update());
         }
 
+        //Set arrows up
         arrowA.visibleProperty().bind(arrowAVisible);
         arrowB.visibleProperty().bind(arrowBVisible);
 
         update();
 
+        //Set content up
         Button contentBtn = new Button("1");
         contentBtn.getStyleClass().add("weightStyle");
 
-        contentBtn.setOnMousePressed(mouseEvent ->
-        {
+        //region Select content
+        contentBtn.setOnMousePressed(mouseEvent -> {
             if (mouseEvent.isPrimaryButtonDown()) {
                 if (selectedContentBtn != null) {
                     if (contentBtn == selectedContentBtn) {
@@ -85,25 +90,29 @@ public class EdgeUI extends Group {
                             EDGE.changeConnectionToNode(node2.NODE, true);
                         }
                     } else {
-                        selectNode(contentBtn);
+                        selectContent(contentBtn);
                     }
                 } else {
-                    selectNode(contentBtn);
+                    selectContent(contentBtn);
                 }
             } else if (mouseEvent.isSecondaryButtonDown()) {
-                Controller.removeEdge(this);
+                removeEdge();
             }
         });
+        //endregion
 
         content.getChildren().add(contentBtn);
 
         getChildren().addAll(content);
 
-        //node coordinates = the arrow's mid-point minus 1/2 the width/height, so the content is bang in the centre
+        //Place content
         content.layoutXProperty().bind(x2Property().add(x1Property()).divide(2).subtract(content.widthProperty().divide(2)));
         content.layoutYProperty().bind(y2Property().add(y1Property()).divide(2).subtract(content.heightProperty().divide(2)));
     }
 
+    /**
+     * Updates the current position of the EdgeUI
+     */
     public void update() {
         //If 1 that take height, if 2 that take with
         var value = Math.abs(Math.tanh((y2.get() - y1.get())/(x2.get()-x1.get())));
@@ -123,7 +132,10 @@ public class EdgeUI extends Group {
         setStyleUp();
     }
 
-    private void selectNode(Button contentToSelect) {
+    /**
+     * Do select the clicked content
+     */
+    private void selectContent(Button contentToSelect) {
         removeText = true;
 
         if (selectedContentBtn != null) {
@@ -137,7 +149,10 @@ public class EdgeUI extends Group {
         selectedContentBtn.setOnKeyPressed(keyEvent -> setEdgeWeight(keyEvent, selectedContentBtn));
     }
 
-    public static void deselectSelectedEdge() {
+    /**
+     * Deselect the current selected content
+     */
+    public static void deselectSelectedContent() {
         if (selectedContentBtn != null) {
             selectedContentBtn.setOnKeyPressed(null);
             selectedContentBtn.getStyleClass().remove("selected");
@@ -145,13 +160,16 @@ public class EdgeUI extends Group {
         }
     }
 
-    private void setEdgeWeight(KeyEvent keyEvent, Button node) {
-        String text = node.getText();
+    /**
+     * Updates the weight/length of the edge
+     */
+    private void setEdgeWeight(KeyEvent keyEvent, Button content) {
+        String text = content.getText();
 
         if (removeText) {
-            node.setText("");
+            content.setText("");
             removeText = false;
-            setEdgeWeight(keyEvent, node);
+            setEdgeWeight(keyEvent, content);
             return;
         }
 
@@ -167,9 +185,48 @@ public class EdgeUI extends Group {
             }
         }
 
-        node.setText(text);
+        if (text.length() > 0) {
+            if (text.contains("/")) {
+                EDGE.length = calculateFracture(text);
+            } else
+                EDGE.length = Double.parseDouble(text);
+        }
+
+        content.setText(text);
     }
 
+    /**
+     * Calculates the fracture of the weight/length if needed
+     */
+    private double calculateFracture(String operation) {
+        double calculated = 0;
+
+        ArrayList<String> numbers = new ArrayList<>();
+        numbers.add("");
+
+        for (int i = 0; i < operation.length(); i++) {
+            if (operation.substring(i, i+1).equals("/")) {
+                numbers.add("");
+            } else {
+                numbers.set(numbers.size()-1, numbers.get(numbers.size()-1) + operation.substring(i, i+1));
+            }
+        }
+
+        if (!numbers.isEmpty()) {
+            calculated = Double.parseDouble(numbers.get(0));
+
+            for (int i = 1; i < numbers.size(); i++) {
+                if (!numbers.get(i).isEmpty())
+                   calculated /= Double.parseDouble(numbers.get(i));
+            }
+        }
+
+        return calculated;
+    }
+
+    /**
+     * Delete the last char of the edge name
+     */
     private String deleteChar(String text) {
         String newText = text;
 
@@ -180,10 +237,16 @@ public class EdgeUI extends Group {
         return newText;
     }
 
+    /**
+     * Returns the value between a and b depending on f
+     */
     double lerp(double a, double b, double f) {
         return a + f * (b - a);
     }
 
+    /**
+     * Sets the style of the edge and arrows up
+     */
     private void setStyleUp() {
         edge.getStyleClass().setAll("edge");
         arrowA.getStyleClass().setAll("edge");
@@ -193,6 +256,9 @@ public class EdgeUI extends Group {
         arrowB.getStyleClass().add("arrow");
     }
 
+    /**
+     * Do create the arrows at the end of the edge
+     */
     private void createArrows(double x1, double y1, double x2, double y2) {
         double theta = Math.atan2(y2 - y1, x2 - x1);
 
@@ -227,6 +293,9 @@ public class EdgeUI extends Group {
         arrowB.getPoints().addAll(x, y);
     }
 
+    /**
+     * Scales the edge depending on the scaler value, so it doesn't overlap with the node
+     */
     private double[] scale(double x1, double y1, double x2, double y2, double SCALER) {
         double theta = Math.atan2(y2 - y1, x2 - x1);
         return new double[] {
@@ -235,7 +304,17 @@ public class EdgeUI extends Group {
         };
     }
 
-    //Get and set
+    /**
+     * Removes the edge from the graph and screen
+     */
+    public void removeEdge() {
+        Controller.paneReference.getChildren().remove(this);
+        getNode1().edges.remove(this);
+        getNode2().edges.remove(this);
+        Controller.graph.removeEdge(EDGE);
+    }
+
+    //region Getters and setters
     public double getX1() {
         return x1.get();
     }
@@ -302,4 +381,5 @@ public class EdgeUI extends Group {
     public void setNode2(NodeUI node2) {
         this.node2 = node2;
     }
+    //endregion
 }
