@@ -1,14 +1,12 @@
 package com.example.graphenprogramm;
 
-import com.example.graphenprogramm.graphLogic.Algorithm.Algorithm;
-import com.example.graphenprogramm.graphLogic.Algorithm.Dijkstra;
 import com.example.graphenprogramm.graphLogic.Edge;
-import com.example.graphenprogramm.graphLogic.Graph;
 import com.example.graphenprogramm.graphLogic.Node;
+import com.example.graphenprogramm.graphUI.NodeUI;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.stage.Screen;
+import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import javafx.util.Pair;
 

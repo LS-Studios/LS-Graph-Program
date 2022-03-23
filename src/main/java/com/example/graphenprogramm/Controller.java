@@ -1,6 +1,8 @@
 package com.example.graphenprogramm;
 
 import com.example.graphenprogramm.graphLogic.Graph;
+import com.example.graphenprogramm.graphLogic.GraphFile;
+import com.example.graphenprogramm.graphLogic.Node;
 import com.example.graphenprogramm.graphUI.EdgeUI;
 import com.example.graphenprogramm.graphUI.NodeUI;
 import javafx.fxml.FXML;
@@ -10,12 +12,11 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.input.*;
 import javafx.scene.layout.*;
+import javafx.stage.FileChooser;
 
+import java.io.*;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 
 public class Controller implements Initializable {
     @FXML
@@ -35,11 +36,12 @@ public class Controller implements Initializable {
     public static EdgeUI edgeUI;
 
     public static NodeUI dragOverNode;
-
     public static boolean shiftPressed = false;
     public static boolean controlPressed = false;
 
+    public static FileChooser fileChooser;
     public static ContextMenu contextMenu;
+    private GraphFile copyFile;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -53,7 +55,7 @@ public class Controller implements Initializable {
                         NodeUI.selectedNodes.forEach(NodeUI::removeNode);
                     }
                 }
-                case DELETE -> deleteAllNodes();
+                case DELETE -> deleteAll();
                 case SHIFT -> shiftPressed = true;
                 case CONTROL -> controlPressed = true;
             }
@@ -71,10 +73,37 @@ public class Controller implements Initializable {
                 contextMenu.hide();
         });
 
+        pane.setOnDragOver(dragEvent -> {
+            if (dragEvent.getDragboard().hasFiles()) {
+                /* allow for both copying and moving, whatever user chooses */
+                dragEvent.acceptTransferModes(TransferMode.COPY_OR_MOVE);
+            }
+            dragEvent.consume();
+        });
+
+        pane.setOnDragDropped(dragEvent -> {
+            Dragboard db = dragEvent.getDragboard();
+            boolean success = false;
+            if (db.hasFiles()) {
+                for (File file : db.getFiles()) {
+                    GraphFile graphFile = loadGraphFile(file);
+                    if (graphFile != null)
+                        createNodesWithEdges(graphFile.createUIList());
+                }
+                success = true;
+            }
+            /* let the source know whether the string was successfully
+             * transferred and used */
+            dragEvent.setDropCompleted(success);
+
+            dragEvent.consume();
+        });
+
         //Add graph
         graph = new Graph();
 
-        //Add grid
+        //region Add grid
+
         final int numCols = 100;
         final int numRows = 100;
         for (int i = 0; i < numCols; i++) {
@@ -87,16 +116,90 @@ public class Controller implements Initializable {
             rowConst.setPercentHeight(numRows);
             bgGrid.getRowConstraints().add(rowConst);
         }
+
+        //endregion
     }
+
+    //region Load and save
+    private void saveFile() {
+        fileChooser = new FileChooser();
+        fileChooser.setTitle("Save graph");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("GRAPH", "*.graph")
+        );
+        File saveGraphFile = fileChooser.showSaveDialog(Main.mainStage);
+
+        saveGraphFile(saveGraphFile, new GraphFile(nodes));
+    }
+
+    private void loadFile() {
+        fileChooser = new FileChooser();
+        fileChooser.setTitle("Open saved graph");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("GRAPH", "*.graph")
+        );
+        File graphFileToOpen = fileChooser.showOpenDialog(Main.mainStage);
+
+        GraphFile graphFile = loadGraphFile(graphFileToOpen);
+        if (graphFile != null)
+            createNodesWithEdges(graphFile.createUIList());
+    }
+
+    /**
+     * Do to the given graph file to the given file directory
+     */
+    private void saveGraphFile(File fileDir, GraphFile graphFile) {
+        if (fileDir != null) {
+            try{
+                FileOutputStream fos = new FileOutputStream(fileDir.getAbsolutePath());
+                ObjectOutputStream oos = new ObjectOutputStream(fos);
+
+                oos.writeObject(graphFile);
+
+                oos.close();
+                fos.close();
+            }
+            catch(IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Do load the graph file from the given file
+     */
+    private GraphFile loadGraphFile(File file) {
+        GraphFile graphFile = null;
+        if (file != null) {
+            try{
+                FileInputStream fileIn = new FileInputStream(file.getAbsolutePath());
+                ObjectInputStream objectIn = new ObjectInputStream(fileIn);
+
+                Object obj = objectIn.readObject();
+
+                graphFile = (GraphFile) obj;
+                System.out.println("The Object has been read from the file");
+                objectIn.close();
+                fileIn.close();
+            }
+            catch(IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return graphFile;
+    }
+    //endregion
 
     //region Graph events
 
     public void onGraphPressed(MouseEvent event) {
         if (event.isPrimaryButtonDown()) {
             node1 = createNode(event.getX(), event.getY());
+
+            NodeUI.deselectSelectedNodes();
+            EdgeUI.deselectSelectedEdges();
         }
-        NodeUI.deselectSelectedNodes();
-        EdgeUI.deselectSelectedEdges();
     }
 
     public void onGraphDragDetected(MouseEvent event) {
@@ -128,6 +231,7 @@ public class Controller implements Initializable {
         if (node2 != null && event.getButton() == MouseButton.PRIMARY && dragOverNode != null) {
             node2.removeNode();
             dragOverNode.getStyleClass().remove("draggedOver");
+            edgeUI.removeEdge();
             edgeUI = createEdge(node1, dragOverNode);
             dragOverNode = null;
         }
@@ -137,23 +241,36 @@ public class Controller implements Initializable {
             //region Algorithm menu
 
             Menu algorithmMenu = new Menu("Algorithm");
-            MenuItem subAlgorithm1 = new MenuItem("Dijkstra");
+            MenuItem subAlgorithm1 = new MenuItem("Dijkstra path");
+            MenuItem subAlgorithm2 = new MenuItem("Dijkstra progress");
 
             //Set dijkstra calculation up and calculate the path
             subAlgorithm1.setOnAction(actionEvent -> {
-                if (NodeUI.startNode != null && NodeUI.endNode != null) {
-                    graph.setDijkstraAlgorithmUp(NodeUI.startNode.NODE, NodeUI.endNode.NODE).calculate(false);
-                }
+                NodeUI.deselectSelectedNodes();
+                EdgeUI.deselectSelectedEdges();
+
+                if (NodeUI.startNode != null && NodeUI.endNode != null)
+                    graph.setDijkstraAlgorithmUp(NodeUI.startNode.NODE, NodeUI.endNode.NODE).showPath(false);
+            });
+            subAlgorithm2.setOnAction(actionEvent -> {
+                NodeUI.deselectSelectedNodes();
+                EdgeUI.deselectSelectedEdges();
+
+                if (NodeUI.startNode != null && NodeUI.endNode != null)
+                    graph.setDijkstraAlgorithmUp(NodeUI.startNode.NODE, NodeUI.endNode.NODE).showProgress();
             });
 
-            algorithmMenu.getItems().addAll(subAlgorithm1);
+            algorithmMenu.getItems().addAll(subAlgorithm1, subAlgorithm2);
 
             //endregion
 
             //region Edit options
 
+            Menu editMenu = new Menu("Edit");
             MenuItem item1 = new MenuItem("Toggle weight");
-            MenuItem item2 = new MenuItem("Delete all");
+            MenuItem item2 = new MenuItem("Duplicate selected nodes");
+            MenuItem item3 = new MenuItem("Select all");
+            MenuItem item4 = new MenuItem("Delete all");
 
             //Toggle the visibility if the weights
             item1.setOnAction(actionEvent -> {
@@ -161,13 +278,43 @@ public class Controller implements Initializable {
                 nodes.forEach(node -> node.edges.forEach(edge -> edge.setContentVisible(visible)));
             });
 
-            //Delete all nodes in graph
-            item2.setOnAction(actionEvent -> deleteAllNodes());
+            item2.setOnAction(actionEvent -> {
+                copyFile = new GraphFile(NodeUI.selectedNodes);
+                createNodesWithEdges(copyFile.createUIList());
+            });
+
+            //Select all nodes in the graph
+            item3.setOnAction(actionEvent -> selectAll());
+
+            //Delete all nodes in the graph
+            item4.setOnAction(actionEvent -> deleteAll());
+
+            if (NodeUI.selectedNodes.size() > 0)
+                editMenu.getItems().addAll(item1, item2, item3, item4);
+            else
+                editMenu.getItems().addAll(item1, item3, item4);
 
             //endregion
 
+            //region file menu
+            Menu fileMenu = new Menu("File");
+            MenuItem subFile1 = new MenuItem("Save");
+            MenuItem subFile2 = new MenuItem("Load");
+
+            //Set dijkstra calculation up and calculate the path
+            subFile1.setOnAction(actionEvent -> {
+                saveFile();
+            });
+
+            subFile2.setOnAction(actionEvent -> {
+                loadFile();
+            });
+
+            fileMenu.getItems().addAll(subFile1, subFile2);
+            //endregion
+
             //Create the menu
-            createContextMenu(Arrays.asList(algorithmMenu, item1, item2), event.getScreenX() - 10, event.getScreenY() - 10);
+            createContextMenu(Arrays.asList(algorithmMenu, editMenu, fileMenu), event.getScreenX() - 10, event.getScreenY() - 10);
         }
 
         node1 = null;
@@ -177,12 +324,57 @@ public class Controller implements Initializable {
     //endregion
 
     //region Create methods
+    public static void createNodesWithEdges(List<NodeUI> nodesToCreate) {
+        NodeUI.deselectSelectedNodes();
+        EdgeUI.deselectSelectedEdges();
+
+        for (NodeUI node : nodesToCreate) {
+
+            //Add and select node
+            addNode(node);
+
+            if (!node.getStyleClass().contains("selected"))
+                node.getStyleClass().add("selected");
+
+            if (!NodeUI.selectedNodes.contains(node))
+                NodeUI.selectedNodes.add(node);
+
+            node.layoutXProperty().addListener((prop, oldValue, newValue) -> {
+                node.NODE.getPosition().setX(newValue.doubleValue());
+            });
+
+            node.layoutYProperty().addListener((prop, oldValue, newValue) -> {
+                node.NODE.getPosition().setY(newValue.doubleValue());
+            });
+
+            //Add and select edges
+            for (EdgeUI edge : node.edges) {
+                if (!paneReference.getChildren().contains(edge)) {
+                    paneReference.getChildren().add(edge);
+                }
+
+                if (!edge.contentBtn.getStyleClass().contains("selected"))
+                    edge.contentBtn.getStyleClass().add("selected");
+
+                if (!EdgeUI.selectedEdges.contains(edge))
+                    EdgeUI.selectedEdges.add(edge);
+            }
+        }
+    }
 
     public static NodeUI createNode(double x, double y) {
         NodeUI node = new NodeUI(x, y);
 
         //Add node to graph data
         node.NODE = graph.addNode(node.getText());
+
+        node.layoutXProperty().addListener((prop, oldValue, newValue) -> {
+            node.NODE.getPosition().setX(newValue.doubleValue());
+        });
+
+        node.layoutYProperty().addListener((prop, oldValue, newValue) -> {
+            node.NODE.getPosition().setY(newValue.doubleValue());
+        });
 
         //Add node to the global list
         nodes.add(node);
@@ -191,6 +383,19 @@ public class Controller implements Initializable {
         paneReference.getChildren().add(node);
 
         return node;
+    }
+
+    public static NodeUI addNode(NodeUI nodeToAdd) {
+        //Add node to graph data
+        graph.addNode(nodeToAdd.NODE);
+
+        //Add node to the global list
+        nodes.add(nodeToAdd);
+
+        //Add node to screen
+        paneReference.getChildren().add(nodeToAdd);
+
+        return nodeToAdd;
     }
 
     public static EdgeUI createEdge(NodeUI node1, NodeUI node2) {
@@ -226,7 +431,36 @@ public class Controller implements Initializable {
 
     //endregion
 
-    public static void deleteAllNodes() {
+    /**
+     * Select all the nodes and edges
+     */
+    public static void selectAll() {
+        //loop through the nodes list and remove the nodes plus edges from the screen
+        nodes.forEach(node -> {
+            //Select the node
+            if (!node.getStyleClass().contains("selected"))
+                node.getStyleClass().add("selected");
+
+            if (!NodeUI.selectedNodes.contains(node))
+                NodeUI.selectedNodes.add(node);
+
+            //Select the edge
+            node.edges.filtered(edge -> {
+                if (!edge.contentBtn.getStyleClass().contains("selected"))
+                    edge.contentBtn.getStyleClass().add("selected");
+
+                if (!EdgeUI.selectedEdges.contains(edge))
+                    EdgeUI.selectedEdges.add(edge);
+
+                return true;
+            });
+        });
+    }
+
+    /**
+     * Delete all the nodes and edges
+     */
+    public static void deleteAll() {
         //loop through the nodes list and remove the nodes plus edges from the screen
         nodes.forEach(node -> {
             paneReference.getChildren().remove(node);
@@ -242,5 +476,25 @@ public class Controller implements Initializable {
         //Reset the node count
         NodeUI.count = 0;
         nodes.clear();
+
+        NodeUI.selectedNodes.clear();
+        EdgeUI.selectedEdges.clear();
+    }
+
+
+    /**
+     * Return the node ui that contains the given node
+     */
+    public static NodeUI getNodeUIByNode(Node node) {
+        NodeUI foundNodeUI = null;
+
+        for (NodeUI nodeUI : nodes) {
+            if (nodeUI.NODE.equals(node)) {
+                foundNodeUI = nodeUI;
+                break;
+            }
+        }
+
+        return foundNodeUI;
     }
 }

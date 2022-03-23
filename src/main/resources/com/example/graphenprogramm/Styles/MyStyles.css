@@ -42,6 +42,14 @@
     -fx-border-width: 3;
 }
 
+.edge {
+    -fx-stroke: black;
+}
+
+.arrow {
+    -fx-stroke: black;
+}
+
 .startNode {
     -fx-background-color: #f1c40f;
 }
@@ -50,13 +58,12 @@
     -fx-background-color: #e67e22;
 }
 
-.edge {
-    -fx-stroke: black;
+.inProgress {
+    -fx-background-color: #2ecc71;
 }
 
-.arrow {
-    -fx-stroke: black;
-    -fx-stroke-width: 2;
+.checked {
+    -fx-background-color: #3498db;
 }
 
 .path {

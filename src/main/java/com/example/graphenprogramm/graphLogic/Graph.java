@@ -2,10 +2,12 @@ package com.example.graphenprogramm.graphLogic;
 
 import com.example.graphenprogramm.graphLogic.Algorithm.Algorithm;
 import com.example.graphenprogramm.graphLogic.Algorithm.Dijkstra;
+import com.example.graphenprogramm.graphUI.EdgeUI;
 import com.example.graphenprogramm.graphUI.NodeUI;
 import javafx.util.Pair;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class Graph
@@ -22,12 +24,20 @@ public class Graph
     }
 
     /**
-     * Do add a node to the graph
+     * Do add a node with given name to the graph
      */
     public Node addNode(String nodeName) {
         Node newNode = new Node(nodeName);
         nodes.add(newNode);
         return  newNode;
+    }
+
+    /**
+     * Do add a existing node to this graph
+     */
+    public Node addNode(Node node) {
+        nodes.add(node);
+        return node;
     }
 
     /**
@@ -57,21 +67,32 @@ public class Graph
         return null;
     }
 
+
     /**
-     * Do add a edge to the graph
+     * Returns a node based on the given id
      */
-    public Edge addEdge(Node node1, Node node2) {
-        Edge newEdge = new Edge(new Pair<>(node1, true), new Pair<>(node2, true), 1);
-        node1.getEdges().add(newEdge);
-        node2.getEdges().add(newEdge);
-        return newEdge;
+    public Node getNode(int nodeID) {
+        for (Node node : nodes) {
+            if (node.getID() == nodeID) {
+                return node;
+            }
+        }
+
+        return null;
     }
 
     /**
      * Do add a edge to the graph
      */
+    public Edge addEdge(Node node1, Node node2) {
+        Edge newEdge = new Edge(node1, true, node2, true, 1);
+        node1.getEdges().add(newEdge);
+        node2.getEdges().add(newEdge);
+        return newEdge;
+    }
+
     public Edge addEdge(Node node1, Node node2, double length) {
-        Edge newEdge = new Edge(new Pair<>(node1, true), new Pair<>(node2, true), 1);
+        Edge newEdge = new Edge(node1, true, node2, true, 1);
         node1.getEdges().add(newEdge);
         node2.getEdges().add(newEdge);
         newEdge.setLength(length);
@@ -89,49 +110,60 @@ public class Graph
         }
     }
 
-    @Override
-    public String toString() {
-        String output = "";
+    public static String debugGraph(ArrayList<NodeUI> nodes) {
+        List<Node> nodes_ = new ArrayList<>();
+        nodes.forEach(nodeUI -> nodes_.add(nodeUI.NODE));
+        return debugGraph(nodes_);
+    }
+
+    public static String debugGraph(List<Node> nodes) {
+        String graphString = "";
 
         for (Node node : nodes) {
-            output += node.getName() + " | ";
+            graphString += node.getName() + " (" + node.getID() + ") " + " | ";
 
             if (node.getEdges().size() > 0) {
                 for (Edge edge : node.getEdges()) {
-                    if (edge.getNode1().getKey().equals(node)) {
-                        if (edge.getNode1().getValue()) {
-                            output += " <";
+                    if (edge.getNode1().equals(node)) {
+                        if (edge.isPointToNode1()) {
+                            graphString += " <";
                         }
 
-                        output += " -(" + edge.getLength() + ")- ";
+                        graphString += " -(" + edge.getLength() + ")- ";
 
-                        if (edge.getNode2().getValue()) {
-                            output += "> ";
+                        if (edge.isPointToNode2()) {
+                            graphString += "> ";
                         }
 
-                        output += edge.getNode2().getKey().getName();
-                    } else if (edge.getNode2().getKey().equals(node)) {
+                        graphString += edge.getNode2().getName();
+                    } else if (edge.getNode2().equals(node)) {
 
-                        if (edge.getNode2().getValue()) {
-                            output += " <";
+                        if (edge.isPointToNode2()) {
+                            graphString += " <";
                         }
 
-                        output += " -(" + edge.getLength() + ")- ";
+                        graphString += " -(" + edge.getLength() + ")- ";
 
-                        if (edge.getNode1().getValue()) {
-                            output += "> ";
+                        if (edge.isPointToNode1()) {
+                            graphString += "> ";
                         }
 
-                        output += edge.getNode1().getKey().getName();
+                        graphString += edge.getNode1().getName();
                     }
 
-                    output += " | ";
+                    graphString += " | ";
                 }
             }
 
-            output += "\n";
+            graphString += "\n";
         }
-        return output;
+
+        return graphString;
+    }
+
+    @Override
+    public String toString() {
+        return debugGraph(nodes);
     }
 }
 

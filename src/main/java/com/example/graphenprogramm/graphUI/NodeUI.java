@@ -29,7 +29,7 @@ public class NodeUI extends Button {
     public double startDragX;
     public double startDragY;
 
-    public static NodeUI startNode, endNode;
+    public static NodeUI startNode, endNode, dragedNode;
 
     public NodeUI(double x, double y) {
         //Place node
@@ -143,12 +143,47 @@ public class NodeUI extends Button {
             node2.setVisible(true);
         }
 
+        if (dragedNode != null) {
+            dragedNode.toFront();
+            dragedNode.setVisible(true);
+            dragedNode.edges.forEach(edge -> {
+                edge.toFront();
+            });
+        }
+
         //Add edge between dragged from and dragged over node
         if (node2 != null && mouseEvent.getButton() == MouseButton.PRIMARY && dragOverNode != null) {
             removeNode(node2);
             dragOverNode.getStyleClass().remove("draggedOver");
+            edgeUI.removeEdge();
             createEdge(dragOverNode, this);
             dragOverNode = null;
+        }
+
+        if (dragedNode != null) {
+            System.out.println();
+            dragedNode.edges.forEach(edge -> {
+                System.out.println(edge.getNode1() + " " + edge.getNode2());
+            });
+        }
+
+        //Join dragged node worth drag over node and move the edges
+        if (dragedNode != null && mouseEvent.getButton() == MouseButton.SECONDARY && dragOverNode != null) {
+            dragOverNode.getStyleClass().remove("draggedOver");
+
+            dragedNode.edges.forEach(edge -> {
+                if (!edge.getNode1().equals(dragedNode)) {
+                    if (!edge.getNode1().NODE.isConnectedTo(dragOverNode.NODE)) {
+                        createEdge(edge.getNode1(), dragOverNode);
+                    }
+                } else if (!edge.getNode2().equals(dragedNode)) {
+                    if (!edge.getNode2().NODE.isConnectedTo(dragOverNode.NODE)) {
+                        createEdge(edge.getNode2(), dragOverNode);
+                    }
+                }
+            });
+            removeNode(dragedNode);
+            dragedNode = null;
         }
 
         //Remove all states like rename and select on right mouse click
@@ -202,18 +237,18 @@ public class NodeUI extends Button {
 
             //Delete all selected nodes and edges
             subDelete2.setOnAction(actionEvent -> {
-                selectedNodes.forEach(node -> {
-                    node.removeNode();
-                });
-                selectedNodes.clear();
-                EdgeUI.selectedEdges.forEach(edge -> {
-                    edge.removeEdge();
-                });
-                EdgeUI.selectedEdges.clear();
+                while (selectedNodes.size() > 0) {
+                    selectedNodes.get(selectedNodes.size()-1).removeNode();
+                }
+                while (EdgeUI.selectedEdges.size() > 0) {
+                    EdgeUI.selectedEdges.get(EdgeUI.selectedEdges.size()-1).removeEdge();
+                }
             });
 
             deleteMenu.getItems().addAll(subDelete1, subDelete2);
             //endregion
+
+            MenuItem duplicateItem = new MenuItem("Duplicate selected nodes");
 
             //region Algorithm menu
             Menu algorithmMenu = new Menu("Algorithm");
@@ -224,6 +259,9 @@ public class NodeUI extends Button {
             subAlgorithm1.setOnAction(actionEvent -> {
                 if (startNode != null) {
                     startNode.getStyleClass().remove("startNode");
+
+                    if (getStyleClass().contains("endNode"))
+                        startNode.getStyleClass().remove("endNode");
                 }
 
                 if (!getStyleClass().contains("startNode"))
@@ -235,6 +273,9 @@ public class NodeUI extends Button {
             subAlgorithm2.setOnAction(actionEvent -> {
                 if (endNode != null) {
                     endNode.getStyleClass().remove("endNode");
+
+                    if (getStyleClass().contains("startNode"))
+                        startNode.getStyleClass().remove("startNode");
                 }
 
                 if (!getStyleClass().contains("endNode"))
@@ -264,6 +305,7 @@ public class NodeUI extends Button {
         }
 
         node2 = null;
+        dragedNode = null;
     }
 
     private void onNodeDragDetected(MouseEvent e) {
@@ -275,11 +317,20 @@ public class NodeUI extends Button {
             node2.toBack();
             edgeUI = createEdge(this, node2);
         }
+        //Prepare for joining
+        else if (e.isSecondaryButtonDown()) {
+            dragedNode = this;
+            dragedNode.toBack();
+            dragedNode.edges.forEach(edge -> {
+                edge.toBack();
+            });
+        }
 
         startFullDrag();
     }
 
     private void onNodeDragEntered(MouseDragEvent dragEvent) {
+        //Connect nodes
         if (node2 != null && node2 != this) {
             node2.setVisible(false);
 
@@ -301,11 +352,20 @@ public class NodeUI extends Button {
                 getStyleClass().add("draggedOverError");
             }
         }
+        //Join nodes
+        if (dragedNode != null && dragedNode != this) {
+            dragedNode.setVisible(false);
+            getStyleClass().add("draggedOver");
+            dragOverNode = this;
+        }
     }
 
     private void onNodeDragExited(MouseDragEvent dragEvent) {
         if (node2 != null)
             node2.setVisible(true);
+
+        if (dragedNode != null)
+            dragedNode.setVisible(true);
 
         dragOverNode = null;
 
@@ -321,6 +381,14 @@ public class NodeUI extends Button {
 
             if (event.getSceneY() > 0 && event.getSceneY() < Main.mainStage.getHeight()-39)
                 node2.setLayoutY(getLayoutY() + event.getY() + getTranslateY());
+        }
+
+        if (event.isSecondaryButtonDown()) {
+            dragedNode = this;
+            dragedNode.toBack();
+            dragedNode.edges.forEach(edge -> {
+                edge.toBack();
+            });
         }
 
         //Move all selected nodes together with current
@@ -356,7 +424,7 @@ public class NodeUI extends Button {
     /**
      * Do select the node
      */
-    public void selectNode(NodeUI nodeToSelect) {
+    public static void selectNode(NodeUI nodeToSelect) {
         if (!controlPressed) {
             //Deselect all the other nodes and edges if shift is not pressed
             if (!shiftPressed) {
@@ -373,7 +441,7 @@ public class NodeUI extends Button {
 
         //Deselect if control is pressed
         else {
-            deselectNode(nodeToSelect);
+            nodeToSelect.removeAllStates();
         }
     }
 
@@ -383,38 +451,40 @@ public class NodeUI extends Button {
     public static void deselectSelectedNodes() {
         //Reset all nodes to their base state
         nodes.forEach(node_ -> {
-            node_.setOnKeyPressed(null);
-            node_.getStyleClass().remove("rename");
-            node_.getStyleClass().remove("path");
+            node_.removeAllStates("startNode", "endNode");
         });
 
-        //Remove the select style
-        selectedNodes.forEach(node -> {
-            node.getStyleClass().remove("selected");
-        });
-
-        //Clear the list of selected nodes
         selectedNodes.clear();
     }
 
-    /**
-     * Deselecting the given node
-     */
-    public static void deselectNode(NodeUI nodeToDeselect) {
-        //Reset all nodes to their base state
-        nodes.forEach(node -> {
-            node.setOnKeyPressed(null);
-            node.getStyleClass().remove("rename");
-            node.getStyleClass().remove("path");
-        });
-
-        //Remove the select style
-        nodeToDeselect.getStyleClass().remove("selected");
-
-        //Remove the given node from the list
-        selectedNodes.remove(nodeToDeselect);
-    }
     //endregion
+
+    public void setNewStyle(String newStyle, String... exceptions) {
+        removeAllStates(exceptions);
+
+        if (!getStyleClass().contains(newStyle))
+            getStyleClass().add(newStyle);
+    }
+
+    public void removeAllStates(String... exceptions) {
+        for (int i = 0; i < getStyleClass().size(); i++) {
+            if (!getStyleClass().get(i).equals("nodeStyle") && !getStyleClass().get(i).equals("button")) {
+                boolean isExcepting = false;
+                for (String excepting : exceptions) {
+                    if (getStyleClass().get(i).equals(excepting)) {
+                        isExcepting = true;
+                    }
+                }
+
+                if (!isExcepting)
+                    getStyleClass().remove(i);
+            }
+        }
+
+        setOnKeyPressed(null);
+
+        selectedNodes.remove(this);
+    }
 
     /**
      * Sets the text of the node
@@ -495,10 +565,23 @@ public class NodeUI extends Button {
         for (EdgeUI edge : edges) {
             paneReference.getChildren().remove(edge);
             graph.removeEdge(edge.EDGE);
+
+            //Remove edge also in connected node
+            if (edge.getNode1().equals(this)) {
+                edge.getNode2().edges.remove(edge);
+                edge.getNode2().NODE.getEdges().remove(edge.EDGE);
+            }
+            else if (edge.getNode2().equals(this)) {
+                edge.getNode1().edges.remove(edge);
+                edge.getNode1().NODE.getEdges().remove(edge.EDGE);
+            }
+            EdgeUI.deselectEdge(edge);
         }
 
         //Remove the node as well from the data graph
         graph.removeNode(NODE);
+
+        removeAllStates();
         edges.clear();
         nodes.remove(this);
 
@@ -513,13 +596,30 @@ public class NodeUI extends Button {
         paneReference.getChildren().remove(nodeToRemove);
 
         //Remove all edges the given node is connected to
-        for (EdgeUI edge : nodeToRemove.edges) {
+        for (int i = 0; i < nodeToRemove.edges.size(); i++) {
+            EdgeUI edge = nodeToRemove.edges.get(i);
+
             paneReference.getChildren().remove(edge);
             graph.removeEdge(edge.EDGE);
+
+            //Remove edge also in connected node
+            if (edge.getNode1().equals(this)) {
+                edge.getNode2().edges.remove(edge);
+                edge.getNode2().NODE.getEdges().remove(edge.EDGE);
+            }
+            else if (edge.getNode2().equals(this)) {
+                edge.getNode1().edges.remove(edge);
+                edge.getNode1().NODE.getEdges().remove(edge.EDGE);
+            }
+
+            EdgeUI.deselectEdge(edge);
         }
 
         //Remove the given node as well from the data graph
         graph.removeNode(nodeToRemove.NODE);
+
+
+        nodeToRemove.removeAllStates();
         nodeToRemove.edges.clear();
         nodes.remove(nodeToRemove);
 
