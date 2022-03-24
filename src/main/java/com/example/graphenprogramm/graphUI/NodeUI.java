@@ -512,8 +512,10 @@ public class NodeUI extends Button {
                 });
             }
             default -> {
-                //Only add char if it's a letter or number and write it upper case when shift is pressed
-                if (keyEvent.getCode().isLetterKey() || keyEvent.getCode().isDigitKey()) {
+                //Only add char if it's a number or an / for fractures and convert use numpad number if needed
+                if (keyEvent.getCode().getName().contains("Numpad")) {
+                    text += keyEvent.getCode().getName().replace("Numpad ",  "");
+                } else if (keyEvent.getCode().isLetterKey() || keyEvent.getCode().isDigitKey()) {
                     if (keyEvent.isShiftDown())
                         text += keyEvent.getCode().getChar().toUpperCase();
                     else
