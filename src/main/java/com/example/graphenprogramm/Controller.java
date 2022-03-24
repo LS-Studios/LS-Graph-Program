@@ -250,14 +250,14 @@ public class Controller implements Initializable {
                 EdgeUI.deselectSelectedEdges();
 
                 if (NodeUI.startNode != null && NodeUI.endNode != null)
-                    graph.setDijkstraAlgorithmUp(NodeUI.startNode.NODE, NodeUI.endNode.NODE).showPath(false);
+                    graph.setDijkstraAlgorithmUp(NodeUI.startNode.NODE, NodeUI.endNode.NODE).showPath(200, false);
             });
             subAlgorithm2.setOnAction(actionEvent -> {
                 NodeUI.deselectSelectedNodes();
                 EdgeUI.deselectSelectedEdges();
 
                 if (NodeUI.startNode != null && NodeUI.endNode != null)
-                    graph.setDijkstraAlgorithmUp(NodeUI.startNode.NODE, NodeUI.endNode.NODE).showProgress();
+                    graph.setDijkstraAlgorithmUp(NodeUI.startNode.NODE, NodeUI.endNode.NODE).showProgress(350);
             });
 
             algorithmMenu.getItems().addAll(subAlgorithm1, subAlgorithm2);
