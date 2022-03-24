@@ -452,8 +452,10 @@ public class EdgeUI extends Group {
                 });
             }
             default -> {
-                //Only add char if it's a number or an / for fractures
-                if (keyEvent.getCode().getChar().equals("7") && keyEvent.isShiftDown()) {
+                //Only add char if it's a number or an / for fractures and convert use numpad number if needed
+                if (keyEvent.getCode().getName().contains("Numpad")) {
+                    text += keyEvent.getCode().getName().replace("Numpad ",  "");
+                } else if (keyEvent.getCode().getChar().equals("7") && keyEvent.isShiftDown()) {
                     text += "/";
                 } else if (keyEvent.getCode().isDigitKey() || keyEvent.getCode().getChar().equals(".") || keyEvent.getCode().getChar().equals(",")) {
                     text += keyEvent.getCode().getChar();
