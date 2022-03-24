@@ -9,6 +9,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -17,6 +18,7 @@ import javafx.scene.shape.Polyline;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Locale;
 
 import static com.example.graphenprogramm.Controller.*;
 
@@ -452,13 +454,16 @@ public class EdgeUI extends Group {
                 });
             }
             default -> {
-                //Only add char if it's a number or an / for fractures and convert use numpad number if needed
-                if (keyEvent.getCode().getName().contains("Numpad")) {
-                    text += keyEvent.getCode().getName().replace("Numpad ",  "");
-                } else if (keyEvent.getCode().getChar().equals("7") && keyEvent.isShiftDown()) {
-                    text += "/";
-                } else if (keyEvent.getCode().isDigitKey() || keyEvent.getCode().getChar().equals(".") || keyEvent.getCode().getChar().equals(",")) {
-                    text += keyEvent.getCode().getChar();
+                //Add fracture sign in case shift and seven is pressed or the numpad devide button is pressed
+                if (keyEvent.getCode().getChar().equals("7") && keyEvent.isShiftDown() || keyEvent.getCode() == KeyCode.DIVIDE) {
+                    if (text.length() > 0 && (text.charAt(text.length() - 1) != '/')) {
+                        text += "/";
+                    }
+                }
+                //Else add the typed number
+                else {
+                    if (isNumber(keyEvent.getText()))
+                        text += keyEvent.getText();
                 }
             }
         }
@@ -513,15 +518,30 @@ public class EdgeUI extends Group {
 
         //Calculate the fracture if numbers is not empty
         if (!numbers.isEmpty()) {
-            calculated = Double.parseDouble(numbers.get(0));
+            if (!numbers.get(0).equals("/")) {
+                calculated = Double.parseDouble(numbers.get(0));
 
-            for (int i = 1; i < numbers.size(); i++) {
-                if (!numbers.get(i).isEmpty())
-                   calculated /= Double.parseDouble(numbers.get(i));
+                for (int i = 1; i < numbers.size(); i++) {
+                    if (!numbers.get(i).isEmpty())
+                        calculated /= Double.parseDouble(numbers.get(i));
+                }
             }
         }
 
         return calculated;
+    }
+
+    private boolean isNumber(String string) {
+        boolean isNumber = true;
+
+        try {
+            Double.parseDouble(string);
+            isNumber = true;
+        } catch (Exception e) {
+            isNumber = false;
+        }
+
+        return isNumber;
     }
 
     /**
