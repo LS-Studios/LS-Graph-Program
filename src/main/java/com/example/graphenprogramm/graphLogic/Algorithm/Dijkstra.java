@@ -72,7 +72,7 @@ public class Dijkstra extends Algorithm {
         }
     }
 
-    public void showPath(boolean debug) {
+    public void showPath(long animationSpeed, boolean debug) {
         calculate();
 
         //List for debug
@@ -143,7 +143,7 @@ public class Dijkstra extends Algorithm {
                     }
 
                     //Add an delay
-                    try { Thread.sleep(200); } catch (InterruptedException e) {}
+                    try { Thread.sleep(animationSpeed); } catch (InterruptedException e) {}
                 });
             }
         };
@@ -164,7 +164,7 @@ public class Dijkstra extends Algorithm {
         }
     }
 
-    public void showProgress() {
+    public void showProgress(long animationSpeed) {
         Thread thread = new Thread() {
             @Override
             public void run() {
@@ -185,7 +185,7 @@ public class Dijkstra extends Algorithm {
                 //Set node color
                 Controller.getNodeUIByNode(startNode).setNewStyle("inProgress", "startNode", "endNode");
 
-                try { Thread.sleep(350); } catch (InterruptedException e) { e.printStackTrace(); }
+                try { Thread.sleep(animationSpeed); } catch (InterruptedException e) { e.printStackTrace(); }
 
                 //Set the values for all nodes by looping through them and allay get the shortest possible way
                 while(!inProcess.isEmpty())
@@ -229,7 +229,7 @@ public class Dijkstra extends Algorithm {
                             Controller.getNodeUIByNode(way.getNode()).setNewStyle("inProgress","startNode", "endNode");
                         }
                     }
-                    try { Thread.sleep(350); } catch (InterruptedException e) { e.printStackTrace(); }
+                    try { Thread.sleep(animationSpeed); } catch (InterruptedException e) { e.printStackTrace(); }
                 }
             }
         };
