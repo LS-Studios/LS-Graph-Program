@@ -183,7 +183,7 @@ public class Dijkstra extends Algorithm {
                 inProcess.add(startNode);
 
                 //Set node color
-                Controller.getNodeUIByNode(startNode).setNewStyle("inProgress", "startNode", "endNode");
+                Controller.getNodeUIByNode(startNode).setNewStyle("inProgress","button", "nodeStyle", "startNode", "endNode");
 
                 try { Thread.sleep(animationSpeed); } catch (InterruptedException e) { e.printStackTrace(); }
 
@@ -226,7 +226,7 @@ public class Dijkstra extends Algorithm {
                                     way.getNode().setShortestNode(shortestNode);
                                 }
                             }
-                            Controller.getNodeUIByNode(way.getNode()).setNewStyle("inProgress","startNode", "endNode");
+                            Controller.getNodeUIByNode(way.getNode()).setNewStyle("inProgress","button", "nodeStyle", "startNode", "endNode");
                         }
                     }
                     try { Thread.sleep(animationSpeed); } catch (InterruptedException e) { e.printStackTrace(); }
@@ -393,7 +393,7 @@ public class Dijkstra extends Algorithm {
      */
     public void moveToChecked(Node nodeToMove, boolean animate) {
         if (animate)
-            Controller.getNodeUIByNode(nodeToMove).setNewStyle("checked","startNode", "endNode");
+            Controller.getNodeUIByNode(nodeToMove).setNewStyle("checked","button", "nodeStyle", "startNode", "endNode");
 
         checked.add(nodeToMove);
         inProcess.remove(nodeToMove);

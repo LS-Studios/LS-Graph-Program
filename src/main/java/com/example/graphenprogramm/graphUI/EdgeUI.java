@@ -18,6 +18,7 @@ import javafx.scene.shape.Polyline;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
 import static com.example.graphenprogramm.Controller.*;
@@ -54,7 +55,7 @@ public class EdgeUI extends Group {
 
     public final Pane contentPane = new Pane();
     public static ArrayList<EdgeUI> selectedEdges = new ArrayList<>();
-    private boolean removeText = true;
+    public boolean removeText = true;
 
     public EdgeUI(NodeUI node1, NodeUI node2) {
         //Set the properties to the given values
@@ -362,18 +363,9 @@ public class EdgeUI extends Group {
      */
     public static void deselectSelectedEdges() {
         //Reset all nodes to their base state
-        nodes.forEach(node -> {
-            node.edges.forEach(edge -> {
-                edge.contentBtn.setOnKeyPressed(null);
-                edge.contentBtn.getStyleClass().remove("rename");
-                edge.contentBtn.getStyleClass().remove("path");
-                edge.setStyleUp();
-            });
-        });
-
-        //Remove the select style
-        selectedEdges.forEach(content -> {
-            content.contentBtn.getStyleClass().removeAll("selected");
+        selectedEdges.forEach(edge -> {
+            edge.removeAllStates(edge.contentBtn, "button", "weightStyle", "endNode", "startNode");
+            edge.setStyleUp();
         });
 
         //Clear the list of selected edges
@@ -385,17 +377,8 @@ public class EdgeUI extends Group {
      */
     public static void deselectEdge(EdgeUI edgeToDeselect) {
         //Reset all edges to their base state
-        nodes.forEach(node -> {
-            node.edges.forEach(edge -> {
-                edge.contentBtn.setOnKeyPressed(null);
-                edge.contentBtn.getStyleClass().remove("rename");
-                edge.contentBtn.getStyleClass().remove("path");
-                edge.setStyleUp();
-            });
-        });
-
-        //Remove the select sty
-        edgeToDeselect.contentBtn.getStyleClass().remove("select");
+        edgeToDeselect.removeAllStates(edgeToDeselect.contentBtn, "button", "weightStyle", "endNode", "startNode");
+        edgeToDeselect.setStyleUp();
 
         //Remove the given edge from the list
         selectedEdges.remove(edgeToDeselect);
@@ -411,6 +394,8 @@ public class EdgeUI extends Group {
     }
 
     public void removeAllStates(Node node, String... exceptions) {
+        List<String> statesToRemove = new ArrayList<>();
+
         for (int i = 0; i < node.getStyleClass().size(); i++) {
             boolean isExcepting = false;
             for (String excepting : exceptions) {
@@ -419,14 +404,28 @@ public class EdgeUI extends Group {
                 }
             }
 
-            if (!isExcepting) {
-                node.getStyleClass().remove(i);
-            }
+            if (!isExcepting)
+                statesToRemove.add(node.getStyleClass().get(i));
         }
 
-        contentBtn.setOnKeyPressed(null);
+        for (String state : statesToRemove) {
+            removeStates(node, state);
+        }
+    }
 
-        selectedEdges.remove(this);
+    public void removeStates(Node node, String... statesToRemove) {
+        for (int i = 0; i < node.getStyleClass().size(); i++) {
+            for (String state : statesToRemove) {
+                if (node.getStyleClass().get(i).equals(state)) {
+                    if (node.getStyleClass().get(i).equals("rename")) {
+                        renameBtnReference.setOnKeyPressed(null);
+                    } else if (node.getStyleClass().get(i).equals("selected")) {
+                        selectedEdges.remove(node);
+                    }
+                    node.getStyleClass().remove(i);
+                }
+            }
+        }
     }
 
     /**
@@ -449,8 +448,10 @@ public class EdgeUI extends Group {
             case ENTER -> {
                 //Complete renaming
                 selectedEdges.forEach(edge -> {
-                    edge.contentBtn.setOnKeyPressed(null);
-                    edge.contentBtn.getStyleClass().remove("rename");
+                    edge.removeStates(edge.contentBtn, "rename");
+                });
+                NodeUI.selectedNodes.forEach(node -> {
+                    node.removeStates("rename");
                 });
             }
             default -> {

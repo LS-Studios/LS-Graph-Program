@@ -2,7 +2,6 @@ package com.example.graphenprogramm.graphLogic;
 
 import com.example.graphenprogramm.graphLogic.Algorithm.Way;
 import com.example.graphenprogramm.graphUI.Position;
-import javafx.util.Pair;
 
 import java.io.Serializable;
 import java.util.ArrayList;

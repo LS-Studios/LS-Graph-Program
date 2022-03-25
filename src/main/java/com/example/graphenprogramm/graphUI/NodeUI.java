@@ -14,6 +14,7 @@ import static com.example.graphenprogramm.Controller.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class NodeUI extends Button {
     public Node NODE;
@@ -23,7 +24,7 @@ public class NodeUI extends Button {
 
     public ObservableList<EdgeUI> edges = FXCollections.observableArrayList();
 
-    private boolean removeText = true;
+    public boolean removeText = true;
 
     public static ArrayList<NodeUI> selectedNodes = new ArrayList<>();
     public double startDragX;
@@ -158,13 +159,6 @@ public class NodeUI extends Button {
             edgeUI.removeEdge();
             createEdge(dragOverNode, this);
             dragOverNode = null;
-        }
-
-        if (dragedNode != null) {
-            System.out.println();
-            dragedNode.edges.forEach(edge -> {
-                System.out.println(edge.getNode1() + " " + edge.getNode2());
-            });
         }
 
         //Join dragged node worth drag over node and move the edges
@@ -397,7 +391,7 @@ public class NodeUI extends Button {
             if (event.getSceneX() > 0 && event.getSceneX() < Main.mainStage.getWidth()-16)
                 setLayoutX(startDragX + (event.getSceneX() - startDragX));
 
-            if (event.getSceneY() > 0 && event.getSceneY() < Main.mainStage.getHeight()-39)
+            if (event.getSceneY() > 0 && event.getSceneY() < Main.mainStage.getHeight()-100-getHeight()/2)
                 setLayoutY(startDragY + (event.getSceneY() - startDragY));
 
             //Move all selected notes according the current node
@@ -410,7 +404,7 @@ public class NodeUI extends Button {
                         if (x > 0 && x < Main.mainStage.getWidth()-16)
                             node.setLayoutX(x);
 
-                        if (y > 0 && y < Main.mainStage.getHeight()-39)
+                        if (y > 0 && y < Main.mainStage.getHeight()-100-node.getHeight()/2)
                             node.setLayoutY(y);
                     }
                 });
@@ -441,7 +435,7 @@ public class NodeUI extends Button {
 
         //Deselect if control is pressed
         else {
-            nodeToSelect.removeAllStates();
+            nodeToSelect.removeAllStates("button", "nodeStyle");
         }
     }
 
@@ -450,9 +444,9 @@ public class NodeUI extends Button {
      */
     public static void deselectSelectedNodes() {
         //Reset all nodes to their base state
-        nodes.forEach(node_ -> {
-            node_.removeAllStates("startNode", "endNode");
-        });
+        while (selectedNodes.size() > 0) {
+            selectedNodes.get(selectedNodes.size()-1).removeAllStates("button", "nodeStyle", "startNode", "endNode");
+        }
 
         selectedNodes.clear();
     }
@@ -467,23 +461,38 @@ public class NodeUI extends Button {
     }
 
     public void removeAllStates(String... exceptions) {
-        for (int i = 0; i < getStyleClass().size(); i++) {
-            if (!getStyleClass().get(i).equals("nodeStyle") && !getStyleClass().get(i).equals("button")) {
-                boolean isExcepting = false;
-                for (String excepting : exceptions) {
-                    if (getStyleClass().get(i).equals(excepting)) {
-                        isExcepting = true;
-                    }
-                }
+        List<String> statesToRemove = new ArrayList<>();
 
-                if (!isExcepting)
-                    getStyleClass().remove(i);
+        for (int i = 0; i < getStyleClass().size(); i++) {
+            boolean isExcepting = false;
+            for (String excepting : exceptions) {
+                if (getStyleClass().get(i).equals(excepting)) {
+                    isExcepting = true;
+                }
             }
+
+            if (!isExcepting)
+                statesToRemove.add(getStyleClass().get(i));
         }
 
-        setOnKeyPressed(null);
+        for (String state : statesToRemove) {
+            removeStates(state);
+        }
+    }
 
-        selectedNodes.remove(this);
+    public void removeStates(String... statesToRemove) {
+        for (int i = 0; i < getStyleClass().size(); i++) {
+            for (String state : statesToRemove) {
+                if (getStyleClass().get(i).equals(state)) {
+                    if (getStyleClass().get(i).equals("rename")) {
+                        renameBtnReference.setOnKeyPressed(null);
+                    } else if (getStyleClass().get(i).equals("selected")) {
+                        selectedNodes.remove(this);
+                    }
+                    getStyleClass().remove(i);
+                }
+            }
+        }
     }
 
     /**
@@ -493,7 +502,7 @@ public class NodeUI extends Button {
         String text = getText();
 
         //Remove the text if the user start renaming
-        if (removeText && keyEvent.getCode() != KeyCode.SHIFT) {
+        if (removeText && keyEvent.getCode() != KeyCode.SHIFT && removeText && keyEvent.getCode() != KeyCode.ENTER) {
             setText("");
             removeText = false;
             setNodeText(keyEvent, setAll);
@@ -506,9 +515,11 @@ public class NodeUI extends Button {
             case SPACE -> text += " ";
             case ENTER -> {
                 //Complete renaming
-                nodes.forEach(node -> {
-                    node.setOnKeyPressed(null);
-                    node.getStyleClass().remove("rename");
+                selectedNodes.forEach(node -> {
+                    node.removeStates("rename");
+                });
+                EdgeUI.selectedEdges.forEach(edge -> {
+                    edge.removeStates(edge.contentBtn, "rename");
                 });
             }
             default -> {
@@ -519,6 +530,8 @@ public class NodeUI extends Button {
                     text += keyEvent.getText().toLowerCase();
             }
         }
+
+        keyEvent.consume();
 
         //Rename all selected nodes the same, if true
         final String btnText = text;
