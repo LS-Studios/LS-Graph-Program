@@ -7,7 +7,6 @@ import javafx.util.Pair;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.EmptyStackException;
 import java.util.List;
 
 public class GraphFile implements Serializable {
@@ -25,7 +24,7 @@ public class GraphFile implements Serializable {
 
         List<Pair<Node, Integer>> workNodes = new ArrayList<>();
 
-        //Convert the nodeUIs to normal nodes and add them to the work list and save the id
+        //region Convert the nodeUIs to normal nodes and add them to the work list and save the id
         int count = 0;
         for (NodeUI nodeUI : nodes) {
             Node saveNode = new Node(nodeUI.NODE.getName());
@@ -33,45 +32,45 @@ public class GraphFile implements Serializable {
             saveNode.setID(count++);
             workNodes.add(new Pair<>(saveNode, nodeUI.NODE.getID()));
         }
+        //endregion
 
-        //Convert the edgeUIs to normal edges
-        nodes.forEach(node -> {
-            node.edges.forEach(edge -> {
-                NodeUI node1 = edge.getNode1();
-                NodeUI node2 = edge.getNode2();
+        //region Convert the edgeUIs to normal edges
+        nodes.forEach(node -> node.edges.forEach(edge -> {
+            NodeUI node1 = edge.getNode1();
+            NodeUI node2 = edge.getNode2();
 
-                Node workNode1 = null;
-                Node workNode2 = null;
+            Node workNode1 = null;
+            Node workNode2 = null;
 
-                //Find child nodes of edge by the id
-                for (Pair<Node, Integer> workNode : workNodes) {
-                    if (workNode.getValue() == node1.NODE.getID()) {
-                        workNode1 = workNode.getKey();
-                    }
-                    if (workNode.getValue() == node2.NODE.getID()) {
-                        workNode2 = workNode.getKey();
-                    }
+            //region Find child nodes of edge by the id
+            for (Pair<Node, Integer> workNode : workNodes) {
+                if (workNode.getValue() == node1.NODE.getID()) {
+                    workNode1 = workNode.getKey();
                 }
-
-                //Add the edge to the nodes if the connection is not already there
-                if (workNode1 != null && workNode2 != null) {
-                    if (!workNode1.isConnectedTo(workNode2) && !workNode2.isConnectedTo(workNode1)) {
-                        Edge saveNodeEdge = new Edge(workNode1, edge.EDGE.isPointToNode1(),
-                                                     workNode2, edge.EDGE.isPointToNode2(),
-                                                     edge.EDGE.getLength());
-                        saveNodeEdge.setEdgeSide1Pos(new Position(edge.edge.getPoints().get(0).doubleValue(), edge.edge.getPoints().get(1).doubleValue()));
-                        saveNodeEdge.setEdgeSide2Pos(new Position(edge.edge.getPoints().get(2).doubleValue(), edge.edge.getPoints().get(3).doubleValue()));
-                        workNode1.addEdge(saveNodeEdge);
-                        workNode2.addEdge(saveNodeEdge);
-                    }
+                if (workNode.getValue() == node2.NODE.getID()) {
+                    workNode2 = workNode.getKey();
                 }
-            });
-        });
+            }
+            //endregion
+
+            //region Add the edge to the nodes if the connection is not already there
+            if (workNode1 != null && workNode2 != null) {
+                if (!workNode1.isConnectedTo(workNode2) && !workNode2.isConnectedTo(workNode1)) {
+                    Edge saveNodeEdge = new Edge(workNode1, edge.EDGE.isPointToNode1(),
+                                                 workNode2, edge.EDGE.isPointToNode2(),
+                                                 edge.EDGE.getLength());
+                    saveNodeEdge.setEdgeSide1Pos(new Position(edge.edge.getPoints().get(0), edge.edge.getPoints().get(1)));
+                    saveNodeEdge.setEdgeSide2Pos(new Position(edge.edge.getPoints().get(2), edge.edge.getPoints().get(3)));
+                    workNode1.getEdges().add(saveNodeEdge);
+                    workNode2.getEdges().add(saveNodeEdge);
+                }
+            }
+            //endregion
+        }));
+        //endregion
 
         //Add the nodes to the saved node list
-        workNodes.forEach(workNode -> {
-            savedNodes.add(workNode.getKey());
-        });
+        workNodes.forEach(workNode -> savedNodes.add(workNode.getKey()));
 
         return savedNodes;
     }
@@ -84,7 +83,7 @@ public class GraphFile implements Serializable {
 
         List<Pair<NodeUI, Integer>> workNodes = new ArrayList<>();
 
-        //Convert the nodes to nodeUIs and add them to the work list and save the id
+        //region Convert the nodes to nodeUIs and add them to the work list and save the id
         for (Node node : savedNodes) {
             NodeUI nodeUI = new NodeUI(node.getPosition().getX(), node.getPosition().getY());
             nodeUI.setText(node.getName());
@@ -92,80 +91,80 @@ public class GraphFile implements Serializable {
             nodeUI.NODE.setPosition(node.getPosition());
             workNodes.add(new Pair<>(nodeUI, node.getID()));
         }
+        //endregion
 
-        //Convert the edges to edgeUIs
-        savedNodes.forEach(node -> {
-            node.getEdges().forEach(edge -> {
-                Node node1 = edge.getNode1();
-                Node node2 = edge.getNode2();
+        //region Convert the edges to edgeUIs
+        savedNodes.forEach(node -> node.getEdges().forEach(edge -> {
+            Node node1 = edge.getNode1();
+            Node node2 = edge.getNode2();
 
-                NodeUI workNode1 = null;
-                NodeUI workNode2 = null;
+            NodeUI workNode1 = null;
+            NodeUI workNode2 = null;
 
-                //Find child nodes of edge by the id
-                for (Pair<NodeUI, Integer> workNode : workNodes) {
-                    if (workNode.getValue() == node1.getID()) {
-                        workNode1 = workNode.getKey();
-                    }
-                    if (workNode.getValue() == node2.getID()) {
-                        workNode2 = workNode.getKey();
-                    }
+            //region Find child nodes of edge by the id
+            for (Pair<NodeUI, Integer> workNode : workNodes) {
+                if (workNode.getValue() == node1.getID()) {
+                    workNode1 = workNode.getKey();
                 }
+                if (workNode.getValue() == node2.getID()) {
+                    workNode2 = workNode.getKey();
+                }
+            }
+            //endregion
 
-                //Add the edge to the nodes and edgeUI if the connection is not already there
-                if (workNode1 != null && workNode2 != null) {
-                    if (!workNode1.NODE.isConnectedTo(workNode2.NODE) && !workNode2.NODE.isConnectedTo(workNode1.NODE)) {
-                        EdgeUI edgeUI = new EdgeUI(workNode1, workNode2);
-                        Edge workEdge = new Edge(workNode1.NODE, edge.isPointToNode1(),
-                                                 workNode2.NODE, edge.isPointToNode2(),
-                                                 edge.getLength());
-                        edgeUI.EDGE = workEdge;
+            //region Add the edge to the nodes and edgeUI if the connection is not already there
+            if (workNode1 != null && workNode2 != null) {
+                if (!workNode1.NODE.isConnectedTo(workNode2.NODE) && !workNode2.NODE.isConnectedTo(workNode1.NODE)) {
+                    EdgeUI edgeUI = new EdgeUI(workNode1, workNode2);
+                    Edge workEdge = new Edge(workNode1.NODE, edge.isPointToNode1(),
+                                             workNode2.NODE, edge.isPointToNode2(),
+                                             edge.getLength());
+                    edgeUI.EDGE = workEdge;
 
-                        //Set weight text with check if the length is decimal or not
-                        String length = String.valueOf(workEdge.getLength());
-                        String holeNumber = "";
-                        boolean reachedComma = false;
-                        String commaNumber = "";
-                        for (int i = 0; i < length.length(); i++) {
-                            if (reachedComma) {
-                                commaNumber += length.charAt(i);
-                            } else if (length.charAt(i) != '.') {
-                                holeNumber += length.charAt(i);
-                            } else if (length.charAt(i) == '.') {
-                                reachedComma = true;
-                            }
+                    //Set weight text with check if the length is decimal or not
+                    String length = String.valueOf(workEdge.getLength());
+                    String holeNumber = "";
+                    boolean reachedComma = false;
+                    String commaNumber = "";
+                    for (int i = 0; i < length.length(); i++) {
+                        if (reachedComma) {
+                            commaNumber += length.charAt(i);
+                        } else if (length.charAt(i) != '.') {
+                            holeNumber += length.charAt(i);
+                        } else if (length.charAt(i) == '.') {
+                            reachedComma = true;
                         }
-                        if (Double.parseDouble(commaNumber) > 0)
-                            edgeUI.contentBtn.setText(length);
-                        else
-                            edgeUI.contentBtn.setText(holeNumber);
-
-                        //Set arrow visibility
-                        edgeUI.setArrowAVisible(edgeUI.EDGE.isPointToNode1());
-                        edgeUI.setArrowBVisible(edgeUI.EDGE.isPointToNode2());
-
-                        //Set the position of the edge points
-                        edgeUI.edge.getPoints().setAll(edge.getEdgeSide1Pos().getX(), edge.getEdgeSide1Pos().getY(), edge.getEdgeSide2Pos().getX(), edge.getEdgeSide2Pos().getY());
-
-                        //Set the position of the arrows
-                        edgeUI.setArrowPositions(edge.getEdgeSide1Pos().getX(), edge.getEdgeSide1Pos().getY(), edge.getEdgeSide2Pos().getX(), edge.getEdgeSide2Pos().getY());
-
-                        //edgeUI.update();
-
-                        workNode1.edges.add(edgeUI);
-                        workNode1.NODE.addEdge(edgeUI.EDGE);
-
-                        workNode2.edges.add(edgeUI);
-                        workNode2.NODE.addEdge(edgeUI.EDGE);
                     }
+                    if (Double.parseDouble(commaNumber) > 0)
+                        edgeUI.contentBtn.setText(length);
+                    else
+                        edgeUI.contentBtn.setText(holeNumber);
+
+                    //Set arrow visibility
+                    edgeUI.setArrowAVisible(edgeUI.EDGE.isPointToNode1());
+                    edgeUI.setArrowBVisible(edgeUI.EDGE.isPointToNode2());
+
+                    //Set the position of the edge points
+                    edgeUI.edge.getPoints().setAll(edge.getEdgeSide1Pos().getX(), edge.getEdgeSide1Pos().getY(), edge.getEdgeSide2Pos().getX(), edge.getEdgeSide2Pos().getY());
+
+                    //Set the position of the arrows
+                    edgeUI.setArrowPositions(edge.getEdgeSide1Pos().getX(), edge.getEdgeSide1Pos().getY(), edge.getEdgeSide2Pos().getX(), edge.getEdgeSide2Pos().getY());
+
+                    //edgeUI.update();
+
+                    workNode1.edges.add(edgeUI);
+                    workNode1.NODE.getEdges().add(edgeUI.EDGE);
+
+                    workNode2.edges.add(edgeUI);
+                    workNode2.NODE.getEdges().add(edgeUI.EDGE);
                 }
-            });
-        });
+            }
+            //endregion
+        }));
+        //endregion
 
         //Add the nodes to the nodeUIs list
-        workNodes.forEach(workNode -> {
-            nodeUIs.add(workNode.getKey());
-        });
+        workNodes.forEach(workNode -> nodeUIs.add(workNode.getKey()));
 
         return nodeUIs;
     }
@@ -175,6 +174,7 @@ public class GraphFile implements Serializable {
         return Graph.debugGraph(savedNodes);
     }
 
+    //region Getter and setter
     public List<Node> getSavedNodes() {
         return savedNodes;
     }
@@ -182,4 +182,5 @@ public class GraphFile implements Serializable {
     public void setSavedNodes(List<Node> savedNodes) {
         this.savedNodes = savedNodes;
     }
+    //endregion
 }

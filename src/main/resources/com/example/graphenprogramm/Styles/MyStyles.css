@@ -21,13 +21,9 @@
     -fx-background-radius: 12;
 }
 
-.draggedOver {
-    -fx-background-color: yellow;
-}
+.draggedOver { -fx-background-color: yellow; }
 
-.draggedOverError {
-    -fx-background-color: red;
-}
+.draggedOverError { -fx-background-color: red; }
 
 .selected {
     -fx-border-color: blue;
@@ -42,29 +38,17 @@
     -fx-border-width: 3;
 }
 
-.edge {
-    -fx-stroke: black;
-}
+.edge { -fx-stroke: black; }
 
-.arrow {
-    -fx-stroke: black;
-}
+.arrow { -fx-stroke: black; }
 
-.startNode {
-    -fx-background-color: #f1c40f;
-}
+.startNode { -fx-background-color: #f1c40f; }
 
-.endNode {
-    -fx-background-color: #e67e22;
-}
+.endNode { -fx-background-color: #e67e22; }
 
-.inProgress {
-    -fx-background-color: #2ecc71;
-}
+.inProgress { -fx-background-color: #2ecc71; }
 
-.checked {
-    -fx-background-color: #3498db;
-}
+.checked { -fx-background-color: #3498db; }
 
 .path {
     -fx-background-color: #9b59b6;

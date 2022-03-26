@@ -2,6 +2,7 @@ package com.example.graphenprogramm.graphUI;
 
 import com.example.graphenprogramm.Controller;
 import com.example.graphenprogramm.Main;
+import com.example.graphenprogramm.graphLogic.GraphFile;
 import com.example.graphenprogramm.graphLogic.Node;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -17,48 +18,54 @@ import java.util.Arrays;
 import java.util.List;
 
 public class NodeUI extends Button {
+    //region Variables
     public Node NODE;
 
     public static int count = 0;
-    private int ID;
 
     public ObservableList<EdgeUI> edges = FXCollections.observableArrayList();
 
-    public boolean removeText = true;
-
-    public static ArrayList<NodeUI> selectedNodes = new ArrayList<>();
     public double startDragX;
     public double startDragY;
 
-    public static NodeUI startNode, endNode, dragedNode;
+    public static NodeUI startNode, endNode, draggedNode;
 
+    public static ArrayList<NodeUI> selectedNodes = new ArrayList<>();
+
+    public boolean removeText = true;
+    private ArrayList<NodeUI> se;
+    //endregion
+
+    //region Logic
     public NodeUI(double x, double y) {
-        //Place node
+        //region Place node
         setLayoutX(x);
         setLayoutY(y);
+        //endregion
 
-        //Set translation to the middle of node
+        //region Set translation to the middle of node
         translateXProperty().bind(widthProperty().divide(-2));
         translateYProperty().bind(heightProperty().divide(-2));
+        //endregion
 
-        //region Set ID
+        //region Set previewText
 
         //Raise id
-        ID = count++;
+        int previewText = count++;
 
-        boolean needNewID = false;
+        boolean needOtherPreview = false;
 
         //Check if the current id is already gives away or need to be smaller
         for (NodeUI node : Controller.nodes) {
             if (!isNumeric(node.getText()))
-                needNewID = true;
-            else if (ID == Integer.parseInt(node.getText())) {
-                needNewID = true;
+                needOtherPreview = true;
+            else if (previewText == Integer.parseInt(node.getText())) {
+                needOtherPreview = true;
             }
         }
 
         //Set the new id
-        if (needNewID) {
+        if (needOtherPreview) {
             int id = 0;
 
             //Find the right id
@@ -82,22 +89,24 @@ public class NodeUI extends Button {
             }
 
             //Set the id to the found one
-            ID = id;
+            previewText = id;
         }
 
         //Set the text to the id and add the node style
-        setText("" + ID);
+        setText("" + previewText);
         getStyleClass().add("nodeStyle");
+
         //endregion
 
-        //Set node events
-        setOnMousePressed(mouseEvent -> onNodePressed(mouseEvent));
-        setOnDragDetected(mouseEvent -> onNodeDragDetected(mouseEvent));
-        setOnMouseDragged(mouseEvent -> onNodeDragged(mouseEvent));
-        setOnMouseReleased(mouseEvent -> onNodeReleased(mouseEvent));
-        setOnMouseDragEntered(mouseDragEvent -> onNodeDragEntered(mouseDragEvent));
-        setOnMouseDragExited(mouseDragEvent -> onNodeDragExited(mouseDragEvent));
+        //region Assign node events
+        setOnMousePressed(this::onNodePressed);
+        setOnDragDetected(this::onNodeDragDetected);
+        setOnMouseDragged(this::onNodeDragged);
+        setOnMouseReleased(this::onNodeReleased);
+        setOnMouseDragEntered(this::onNodeDragEntered);
+        setOnMouseDragExited(this::onNodeDragExited);
         setOnMouseMoved(mouseEvent -> { if (contextMenu != null) contextMenu.hide();});
+        //endregion
 
         //Set position variables
         startDragX = getLayoutX();
@@ -109,7 +118,7 @@ public class NodeUI extends Button {
      */
     private boolean isNumeric(String text) {
         try {
-            double d = Double.parseDouble(text);
+            Double.parseDouble(text);
         } catch (NumberFormatException nfe) {
             return false;
         }
@@ -144,12 +153,10 @@ public class NodeUI extends Button {
             node2.setVisible(true);
         }
 
-        if (dragedNode != null) {
-            dragedNode.toFront();
-            dragedNode.setVisible(true);
-            dragedNode.edges.forEach(edge -> {
-                edge.toFront();
-            });
+        if (draggedNode != null) {
+            draggedNode.toFront();
+            draggedNode.setVisible(true);
+            draggedNode.edges.forEach(javafx.scene.Node::toFront);
         }
 
         //Add edge between dragged from and dragged over node
@@ -162,22 +169,22 @@ public class NodeUI extends Button {
         }
 
         //Join dragged node worth drag over node and move the edges
-        if (dragedNode != null && mouseEvent.getButton() == MouseButton.SECONDARY && dragOverNode != null) {
+        if (draggedNode != null && mouseEvent.getButton() == MouseButton.SECONDARY && dragOverNode != null) {
             dragOverNode.getStyleClass().remove("draggedOver");
 
-            dragedNode.edges.forEach(edge -> {
-                if (!edge.getNode1().equals(dragedNode)) {
+            draggedNode.edges.forEach(edge -> {
+                if (!edge.getNode1().equals(draggedNode)) {
                     if (!edge.getNode1().NODE.isConnectedTo(dragOverNode.NODE)) {
                         createEdge(edge.getNode1(), dragOverNode);
                     }
-                } else if (!edge.getNode2().equals(dragedNode)) {
+                } else if (!edge.getNode2().equals(draggedNode)) {
                     if (!edge.getNode2().NODE.isConnectedTo(dragOverNode.NODE)) {
                         createEdge(edge.getNode2(), dragOverNode);
                     }
                 }
             });
-            removeNode(dragedNode);
-            dragedNode = null;
+            removeNode(draggedNode);
+            draggedNode = null;
         }
 
         //Remove all states like rename and select on right mouse click
@@ -209,13 +216,11 @@ public class NodeUI extends Button {
             });
 
             //Rename all selected nodes
-            subRename2.setOnAction(actionEvent -> {
-                selectedNodes.forEach(node -> {
-                    node.getStyleClass().add("rename");
-                    removeText = true;
-                    node.setOnKeyPressed(keyEvent -> setNodeText(keyEvent, true));
-                });
-            });
+            subRename2.setOnAction(actionEvent -> selectedNodes.forEach(node -> {
+                node.getStyleClass().add("rename");
+                removeText = true;
+                node.setOnKeyPressed(keyEvent -> setNodeText(keyEvent, true));
+            }));
 
             renameMenu.getItems().addAll(subRename1, subRename2);
 
@@ -241,8 +246,6 @@ public class NodeUI extends Button {
 
             deleteMenu.getItems().addAll(subDelete1, subDelete2);
             //endregion
-
-            MenuItem duplicateItem = new MenuItem("Duplicate selected nodes");
 
             //region Algorithm menu
             Menu algorithmMenu = new Menu("Algorithm");
@@ -299,10 +302,13 @@ public class NodeUI extends Button {
         }
 
         node2 = null;
-        dragedNode = null;
+        draggedNode = null;
     }
 
     private void onNodeDragDetected(MouseEvent e) {
+        //Add to back up
+        backupFiles.add(new GraphFile(nodes));
+
         //Create edge and drag it if drag on node is happening
         if (e.isPrimaryButtonDown()) {
             node1 = this;
@@ -313,11 +319,9 @@ public class NodeUI extends Button {
         }
         //Prepare for joining
         else if (e.isSecondaryButtonDown()) {
-            dragedNode = this;
-            dragedNode.toBack();
-            dragedNode.edges.forEach(edge -> {
-                edge.toBack();
-            });
+            draggedNode = this;
+            draggedNode.toBack();
+            draggedNode.edges.forEach(javafx.scene.Node::toBack);
         }
 
         startFullDrag();
@@ -334,6 +338,7 @@ public class NodeUI extends Button {
                 if (edge.getNode1().equals(node1)
                         || edge.getNode2().equals(node1)) {
                     canConnect = false;
+                    break;
                 }
             }
 
@@ -347,8 +352,8 @@ public class NodeUI extends Button {
             }
         }
         //Join nodes
-        if (dragedNode != null && dragedNode != this) {
-            dragedNode.setVisible(false);
+        if (draggedNode != null && draggedNode != this) {
+            draggedNode.setVisible(false);
             getStyleClass().add("draggedOver");
             dragOverNode = this;
         }
@@ -358,11 +363,12 @@ public class NodeUI extends Button {
         if (node2 != null)
             node2.setVisible(true);
 
-        if (dragedNode != null)
-            dragedNode.setVisible(true);
+        if (draggedNode != null)
+            draggedNode.setVisible(true);
 
         dragOverNode = null;
 
+        //Remove drag styles
         getStyleClass().remove("draggedOver");
         getStyleClass().remove("draggedOverError");
     }
@@ -370,28 +376,95 @@ public class NodeUI extends Button {
     private void onNodeDragged(MouseEvent event) {
         //Set the position of the dragged node to the mouse
         if (node2 != null) {
-            if (event.getSceneX() > 0 && event.getSceneX() < Main.mainStage.getWidth()-16)
-                node2.setLayoutX(getLayoutX() + event.getX() + getTranslateX());
-
-            if (event.getSceneY() > 0 && event.getSceneY() < Main.mainStage.getHeight()-39)
-                node2.setLayoutY(getLayoutY() + event.getY() + getTranslateY());
-        }
-
-        if (event.isSecondaryButtonDown()) {
-            dragedNode = this;
-            dragedNode.toBack();
-            dragedNode.edges.forEach(edge -> {
-                edge.toBack();
-            });
+            node2.moveNode(event);
         }
 
         //Move all selected nodes together with current
         if (event.isSecondaryButtonDown()) {
+            //Set drag variables
+            draggedNode = this;
+            draggedNode.toBack();
+
+            //Bring edges of node back as well
+            draggedNode.edges.forEach(javafx.scene.Node::toBack);
+
+            moveNode(event);
+        }
+    }
+
+    /**
+     * Do move the node according to the given mouse event
+     */
+    public void moveNode(MouseEvent event) {
+        //Snap to global grid when holding alt
+        if (altPressed) {
             //Move the current one
-            if (event.getSceneX() > 0 && event.getSceneX() < Main.mainStage.getWidth()-16)
+            double gridValue = 20;
+
+            Position globalStartPos = new Position(10.8, 11.8);
+
+            Position moveValue = new Position(event.getSceneX()-globalStartPos.getX(), event.getSceneY()-globalStartPos.getY());
+            Position snapValue = new Position(Math.round(moveValue.getX()/gridValue), Math.round(moveValue.getY()/gridValue));
+
+            if (event.getSceneX() > 0 && event.getSceneX() < Main.mainStage.getWidth() - 16)
+                setLayoutX(globalStartPos.getX() + snapValue.getX()*gridValue);
+
+            if (event.getSceneY() > 0 && event.getSceneY() < Main.mainStage.getHeight() - 100 - getHeight() / 2)
+                setLayoutY(globalStartPos.getY() + snapValue.getY()*gridValue);
+
+            //Move all selected notes according the current node
+            if (selectedNodes.contains(this)) {
+                selectedNodes.forEach(node -> {
+                    Position globalStartPosOffset = new Position(globalStartPos.getX()+node.startDragX-startDragX, globalStartPos.getY()+node.startDragY-startDragY);
+                    if (node != this) {
+                        double x = globalStartPosOffset.getX() + snapValue.getX()*gridValue;
+                        double y = globalStartPosOffset.getY() + snapValue.getY()*gridValue;
+
+                        if (x > 0 && x < Main.mainStage.getWidth() - 16)
+                            node.setLayoutX(x);
+
+                        if (y > 0 && y < Main.mainStage.getHeight() - 100 - node.getHeight() / 2)
+                            node.setLayoutY(y);
+                    }
+                });
+            }
+        }
+        //Snap to local grid when holding control
+        else if (controlPressed) {
+            //Move the current one
+            double gridValue = 20;
+            Position moveValue = new Position(event.getSceneX()-startDragX, event.getSceneY()-startDragY);
+            Position snapValue = new Position(Math.round(moveValue.getX()/gridValue), Math.round(moveValue.getY()/gridValue));
+
+            if (event.getSceneX() > 0 && event.getSceneX() < Main.mainStage.getWidth() - 16)
+                setLayoutX(startDragX + snapValue.getX()*gridValue);
+
+            if (event.getSceneY() > 0 && event.getSceneY() < Main.mainStage.getHeight() - 100 - getHeight() / 2)
+                setLayoutY(startDragY + snapValue.getY()*gridValue);
+
+            //Move all selected notes according the current node
+            if (selectedNodes.contains(this)) {
+                selectedNodes.forEach(node -> {
+                    if (node != this) {
+                        double x = node.startDragX + snapValue.getX()*gridValue;
+                        double y = node.startDragY + snapValue.getY()*gridValue;
+
+                        if (x > 0 && x < Main.mainStage.getWidth() - 16)
+                            node.setLayoutX(x);
+
+                        if (y > 0 && y < Main.mainStage.getHeight() - 100 - node.getHeight() / 2)
+                            node.setLayoutY(y);
+                    }
+                });
+            }
+        }
+        //Don't snap
+        else {
+            //Move the current one
+            if (event.getSceneX() > 0 && event.getSceneX() < Main.mainStage.getWidth() - 16)
                 setLayoutX(startDragX + (event.getSceneX() - startDragX));
 
-            if (event.getSceneY() > 0 && event.getSceneY() < Main.mainStage.getHeight()-100-getHeight()/2)
+            if (event.getSceneY() > 0 && event.getSceneY() < Main.mainStage.getHeight() - 100 - getHeight() / 2)
                 setLayoutY(startDragY + (event.getSceneY() - startDragY));
 
             //Move all selected notes according the current node
@@ -401,10 +474,10 @@ public class NodeUI extends Button {
                         double x = node.startDragX + (event.getSceneX() - startDragX);
                         double y = node.startDragY + (event.getSceneY() - startDragY);
 
-                        if (x > 0 && x < Main.mainStage.getWidth()-16)
+                        if (x > 0 && x < Main.mainStage.getWidth() - 16)
                             node.setLayoutX(x);
 
-                        if (y > 0 && y < Main.mainStage.getHeight()-100-node.getHeight()/2)
+                        if (y > 0 && y < Main.mainStage.getHeight() - 100 - node.getHeight() / 2)
                             node.setLayoutY(y);
                     }
                 });
@@ -447,12 +520,11 @@ public class NodeUI extends Button {
         while (selectedNodes.size() > 0) {
             selectedNodes.get(selectedNodes.size()-1).removeAllStates("button", "nodeStyle", "startNode", "endNode");
         }
-
-        selectedNodes.clear();
     }
 
     //endregion
 
+    //region Style methods
     public void setNewStyle(String newStyle, String... exceptions) {
         removeAllStates(exceptions);
 
@@ -468,6 +540,7 @@ public class NodeUI extends Button {
             for (String excepting : exceptions) {
                 if (getStyleClass().get(i).equals(excepting)) {
                     isExcepting = true;
+                    break;
                 }
             }
 
@@ -476,24 +549,24 @@ public class NodeUI extends Button {
         }
 
         for (String state : statesToRemove) {
-            removeStates(state);
+            removeState(state);
         }
     }
 
-    public void removeStates(String... statesToRemove) {
+    public void removeState(String stateToRemove) {
         for (int i = 0; i < getStyleClass().size(); i++) {
-            for (String state : statesToRemove) {
-                if (getStyleClass().get(i).equals(state)) {
-                    if (getStyleClass().get(i).equals("rename")) {
-                        renameBtnReference.setOnKeyPressed(null);
-                    } else if (getStyleClass().get(i).equals("selected")) {
-                        selectedNodes.remove(this);
-                    }
-                    getStyleClass().remove(i);
+            if (getStyleClass().get(i).equals(stateToRemove)) {
+                if (stateToRemove.equals("rename")) {
+                    renameBtnReference.setOnKeyPressed(null);
+                    selectedNodes.forEach(node -> node.setOnKeyPressed(null));
+                } else if (stateToRemove.equals("selected")) {
+                    selectedNodes.remove(this);
                 }
+                getStyleClass().remove(i);
             }
         }
     }
+    //endregion
 
     /**
      * Sets the text of the node
@@ -502,7 +575,7 @@ public class NodeUI extends Button {
         String text = getText();
 
         //Remove the text if the user start renaming
-        if (removeText && keyEvent.getCode() != KeyCode.SHIFT && removeText && keyEvent.getCode() != KeyCode.ENTER) {
+        if (removeText && keyEvent.getCode() != KeyCode.SHIFT && keyEvent.getCode() != KeyCode.ENTER) {
             setText("");
             removeText = false;
             setNodeText(keyEvent, setAll);
@@ -515,12 +588,8 @@ public class NodeUI extends Button {
             case SPACE -> text += " ";
             case ENTER -> {
                 //Complete renaming
-                selectedNodes.forEach(node -> {
-                    node.removeStates("rename");
-                });
-                EdgeUI.selectedEdges.forEach(edge -> {
-                    edge.removeStates(edge.contentBtn, "rename");
-                });
+                selectedNodes.forEach(node -> node.removeState("rename"));
+                EdgeUI.selectedEdges.forEach(edge -> edge.removeState(edge.contentBtn, "rename"));
             }
             default -> {
                 //Write the typed letter upper if shift is pressed
@@ -541,7 +610,7 @@ public class NodeUI extends Button {
                 node.setText(btnText);
 
                 //Update the edge position in case the node expands
-                node.edges.forEach(edge -> edge.update());
+                node.edges.forEach(EdgeUI::update);
             });
         }
         else {
@@ -549,7 +618,7 @@ public class NodeUI extends Button {
             setText(text);
 
             //Update the edge position in case the node expands
-            edges.forEach(edge -> edge.update());
+            edges.forEach(EdgeUI::update);
         }
     }
 
@@ -637,6 +706,5 @@ public class NodeUI extends Button {
         //Decrease the count
         NodeUI.count--;
     }
-
     //endregion
 }

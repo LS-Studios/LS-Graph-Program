@@ -1,16 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.Font?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1000.0" style="-fx-background-color: #34495e;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.graphenprogramm.Controller">
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1000.0" style="-fx-background-color: #34495e;" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.graphenprogramm.Controller">
    <children>
       <AnchorPane fx:id="pane" minHeight="0.0" minWidth="0.0" onDragDetected="#onGraphDragDetected" onMouseDragged="#onGraphDragged" onMousePressed="#onGraphPressed" onMouseReleased="#onGraphReleased" style="-fx-background-color: #f5f6fa;" stylesheets="@Styles/MyStyles.css">
          <children>
@@ -25,25 +20,37 @@
          <children>
             <HBox alignment="TOP_CENTER" prefHeight="85.0" prefWidth="1000.0" spacing="5.0" style="-fx-background-color: #A6A6A6;">
                <children>
-                  <Button fx:id="editMenuBtn" mnemonicParsing="false" style="-fx-background-color: white; -fx-padding: 0 105 0 105;" text="Edit" textFill="#2c3e50">
+                  <Button fx:id="editMenuBtn" mnemonicParsing="false" style="-fx-background-color: white;" text="Edit" textFill="#2c3e50">
                      <font>
                         <Font name="System Bold" size="12.0" />
                      </font>
+                     <padding>
+                        <Insets left="105.0" right="105.0" />
+                     </padding>
                   </Button>
-                  <Button fx:id="algorithmMenuBtn" mnemonicParsing="false" style="-fx-background-color: white; -fx-padding: 0 105 0 105;" text="Algorithm" textFill="#2c3e50">
+                  <Button fx:id="algorithmMenuBtn" mnemonicParsing="false" style="-fx-background-color: white;" text="Algorithm" textFill="#2c3e50">
                      <font>
                         <Font name="System Bold" size="12.0" />
                      </font>
+                     <padding>
+                        <Insets left="105.0" right="105.0" />
+                     </padding>
                   </Button>
-                  <Button fx:id="graphMenuBtn" mnemonicParsing="false" style="-fx-background-color: white; -fx-padding: 0 105 0 105;" text="Graph" textFill="#2c3e50">
+                  <Button fx:id="graphMenuBtn" mnemonicParsing="false" style="-fx-background-color: white;" text="Graph" textFill="#2c3e50">
                      <font>
                         <Font name="System Bold" size="12.0" />
                      </font>
+                     <padding>
+                        <Insets left="105.0" right="105.0" />
+                     </padding>
                   </Button>
-                  <Button fx:id="fileMenuBtn" mnemonicParsing="false" style="-fx-background-color: white; -fx-padding: 0 105 0 105;" text="File" textFill="#2c3e50">
+                  <Button fx:id="fileMenuBtn" mnemonicParsing="false" style="-fx-background-color: white;" text="File" textFill="#2c3e50">
                      <font>
                         <Font name="System Bold" size="12.0" />
                      </font>
+                     <padding>
+                        <Insets left="105.0" right="105.0" />
+                     </padding>
                   </Button>
                </children>
                <padding>
@@ -69,11 +76,26 @@
                               </Label>
                               <HBox alignment="CENTER" spacing="5.0">
                                  <children>
-                                    <Button fx:id="renameSelectedBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Rename selected" />
-                                    <Button fx:id="deleteSelectedBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Delete selected" />
-                                    <Button fx:id="duplicateSelectedBtn" layoutX="448.0" layoutY="10.0" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Duplicate selected nodes" />
-                                    <Button fx:id="selectAllBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Select all" />
-                                    <Button fx:id="deleteAllBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Delete all" />
+                                    <Button fx:id="renameSelectedBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Rename selected (SHIFT+R)">
+                                       <HBox.margin>
+                                          <Insets />
+                                       </HBox.margin></Button>
+                                    <Button fx:id="deleteSelectedBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Delete selected (BACK_SPACE)">
+                                       <HBox.margin>
+                                          <Insets />
+                                       </HBox.margin></Button>
+                                    <Button fx:id="duplicateSelectedBtn" layoutX="448.0" layoutY="10.0" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Duplicate selected (SHIFT+D)">
+                                       <HBox.margin>
+                                          <Insets />
+                                       </HBox.margin></Button>
+                                    <Button fx:id="selectAllBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Select all (STRG+A)">
+                                       <HBox.margin>
+                                          <Insets />
+                                       </HBox.margin></Button>
+                                    <Button fx:id="deleteAllBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Delete all (ENTF)">
+                                       <HBox.margin>
+                                          <Insets />
+                                       </HBox.margin></Button>
                                  </children>
                                  <VBox.margin>
                                     <Insets />
@@ -83,7 +105,7 @@
                         </VBox>
                      </children>
                   </AnchorPane>
-                  <AnchorPane fx:id="algorithmPane">
+                  <AnchorPane fx:id="algorithmPane" visible="false">
                      <children>
                         <VBox alignment="CENTER_LEFT">
                            <children>
@@ -97,10 +119,10 @@
                               </Label>
                               <HBox alignment="CENTER" spacing="5.0">
                                  <children>
-                                    <Button fx:id="setStartNodeBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Set selected  as start node" />
-                                    <Button fx:id="setEndNodeBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Set selected as end node" />
-                                    <Button fx:id="startDijkstraPathBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Start dijkstra path" />
-                                    <Button fx:id="endDijkstraPathBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Start dijkstra progress" />
+                                    <Button fx:id="setStartNodeBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Set selected as start node (SHIFT+S)" />
+                                    <Button fx:id="setEndNodeBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Set selected as end node (SHIFT+E)" />
+                                    <Button fx:id="startDijkstraPathBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Start dijkstra path animation (SHIFT+P)" />
+                                    <Button fx:id="startDijkstraProgressBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Start dijkstra progress animation (ALT+P)" />
                                  </children>
                                  <VBox.margin>
                                     <Insets />
@@ -110,7 +132,7 @@
                         </VBox>
                      </children>
                   </AnchorPane>
-                  <AnchorPane fx:id="graphPane">
+                  <AnchorPane fx:id="graphPane" visible="false">
                      <children>
                         <VBox alignment="CENTER_LEFT">
                            <children>
@@ -124,7 +146,7 @@
                               </Label>
                               <HBox alignment="CENTER" spacing="5.0">
                                  <children>
-                                    <Button fx:id="toggleWeightBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Toggle weights" />
+                                    <Button fx:id="toggleWeightBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Toggle weights (SHIFT+T)" />
                                  </children>
                                  <VBox.margin>
                                     <Insets />
@@ -134,7 +156,7 @@
                         </VBox>
                      </children>
                   </AnchorPane>
-                  <AnchorPane fx:id="filePane">
+                  <AnchorPane fx:id="filePane" visible="false">
                      <children>
                         <VBox alignment="CENTER_LEFT">
                            <children>
@@ -148,8 +170,8 @@
                               </Label>
                               <HBox alignment="CENTER" spacing="5.0">
                                  <children>
-                                    <Button fx:id="saveGraphBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Save graph" />
-                                    <Button fx:id="loadGraphBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Load graph" />
+                                    <Button fx:id="saveGraphBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Save file (STRG+S)" />
+                                    <Button fx:id="loadGraphBtn" mnemonicParsing="false" style="-fx-background-radius: 8; -fx-background-color: white; -fx-text-fill: #2c3e50;" text="Load file (STRG+O)" />
                                  </children>
                                  <VBox.margin>
                                     <Insets />

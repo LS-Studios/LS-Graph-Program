@@ -1,14 +1,10 @@
 package com.example.graphenprogramm.graphLogic;
 
-import com.example.graphenprogramm.graphLogic.Algorithm.Algorithm;
 import com.example.graphenprogramm.graphLogic.Algorithm.Dijkstra;
-import com.example.graphenprogramm.graphUI.EdgeUI;
 import com.example.graphenprogramm.graphUI.NodeUI;
-import javafx.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class Graph
 {
@@ -35,9 +31,8 @@ public class Graph
     /**
      * Do add a existing node to this graph
      */
-    public Node addNode(Node node) {
+    public void addNode(Node node) {
         nodes.add(node);
-        return node;
     }
 
     /**
@@ -67,7 +62,6 @@ public class Graph
         return null;
     }
 
-
     /**
      * Returns a node based on the given id
      */
@@ -91,14 +85,6 @@ public class Graph
         return newEdge;
     }
 
-    public Edge addEdge(Node node1, Node node2, double length) {
-        Edge newEdge = new Edge(node1, true, node2, true, 1);
-        node1.getEdges().add(newEdge);
-        node2.getEdges().add(newEdge);
-        newEdge.setLength(length);
-        return newEdge;
-    }
-
     /**
      * Do remove the goven edge from the graph
      */
@@ -110,12 +96,18 @@ public class Graph
         }
     }
 
+    /**
+     * Returns a string with the debugged graph
+     */
     public static String debugGraph(ArrayList<NodeUI> nodes) {
         List<Node> nodes_ = new ArrayList<>();
         nodes.forEach(nodeUI -> nodes_.add(nodeUI.NODE));
         return debugGraph(nodes_);
     }
 
+    /**
+     * Returns a string with the debugged graph
+     */
     public static String debugGraph(List<Node> nodes) {
         String graphString = "";
 

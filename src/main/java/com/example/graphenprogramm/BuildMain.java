@@ -1,4 +1,4 @@
-import com.example.graphenprogramm.Main;
+package com.example.graphenprogramm;
 
 public class BuildMain {
     public static void main(String[] args) {

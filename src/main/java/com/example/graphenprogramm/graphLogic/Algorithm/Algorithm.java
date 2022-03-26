@@ -13,7 +13,7 @@ public class Algorithm {
     protected Node startNode;
     protected Node endNode;
 
-    protected boolean done = false;
+    public static boolean animationIsPlaying = false;
 
     public Algorithm(List<Node> nodes, Node startNode, Node endNode) {
         this.nodes = nodes;

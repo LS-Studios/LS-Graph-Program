@@ -6,6 +6,7 @@ import javafx.util.Pair;
 import java.io.Serializable;
 
 public class Edge implements Serializable {
+    //region Variables
     private Node node1;
     private boolean pointToNode1;
 
@@ -16,7 +17,9 @@ public class Edge implements Serializable {
 
     private Position edgeSide1Pos = new Position(0, 0);
     private Position edgeSide2Pos = new Position(0, 0);
+    //endregion
 
+    //region Logic
     public Edge(Node node1, boolean pointToNode1, Node node2, boolean pointToNode2, double length) {
         this.node1 = node1;
         this.node2 = node2;
@@ -26,14 +29,11 @@ public class Edge implements Serializable {
     }
 
     public boolean isConnectedTo(Node node1, Node node2) {
-        boolean isConnected = false;
-        if ((this.node1.equals(node1) && this.node2.equals(node2)) || (this.node1.equals(node2) && this.node2.equals(node1))) {
-            isConnected = true;
-        }
+        boolean isConnected = (this.node1.equals(node1) && this.node2.equals(node2)) || (this.node1.equals(node2) && this.node2.equals(node1));
 
         return isConnected;
     }
-
+    //endregion
 
     //region Getter and setter
 

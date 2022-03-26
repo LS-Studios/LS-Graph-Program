@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Node implements Serializable {
+    //region Variables
     private String name;
     private Position position = new Position(0, 0);
     private ArrayList<Edge> edges = new ArrayList<>();
@@ -17,7 +18,9 @@ public class Node implements Serializable {
 
     private Node shortestNode;
     private double distance = 0;
+    //endregion
 
+    //region Logic
     public Node(String name) {
         this.name = name;
         ID = count++;
@@ -64,7 +67,8 @@ public class Node implements Serializable {
         }
 
         return isConnected;
-    };
+    }
+    //endregion
 
     //region Getter and setter
 
@@ -94,12 +98,6 @@ public class Node implements Serializable {
 
     public void setEdges(ArrayList<Edge> edges) {
         this.edges = edges;
-    }
-
-    public void addEdge(Edge... edgesToAdd) {
-        for (Edge edge : edgesToAdd) {
-            this.edges.add(edge);
-        }
     }
 
     public Node getShortestNode() {

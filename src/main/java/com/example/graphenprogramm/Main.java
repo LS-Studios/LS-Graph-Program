@@ -20,14 +20,14 @@ public class Main extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
+        //load and create the scene with the edit screen
         FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("EditScreen.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
 
-        stage.setTitle("Graphen-Programm");
+        //Prepare the stage
+        stage.setTitle("Graph-Program");
         stage.getIcons().add(new Image(String.valueOf(Main.class.getResource("Icon.png"))));
-
         stage.setResizable(false);
-
         stage.setScene(scene);
 
         stage.show();

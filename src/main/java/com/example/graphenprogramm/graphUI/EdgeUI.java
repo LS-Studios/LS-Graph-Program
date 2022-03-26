@@ -19,56 +19,73 @@ import javafx.scene.shape.Polyline;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 
 import static com.example.graphenprogramm.Controller.*;
 
 public class EdgeUI extends Group {
+    //region Variables
     public Edge EDGE;
 
+    //region Polyline references
     public Polyline edge = new Polyline();
     public Polyline arrowA = new Polyline();
     public Polyline arrowB = new Polyline();
+    //endregion
 
-    private SimpleDoubleProperty x1 = new SimpleDoubleProperty();
-    private SimpleDoubleProperty y1 = new SimpleDoubleProperty();
-    private SimpleDoubleProperty x2 = new SimpleDoubleProperty();
-    private SimpleDoubleProperty y2 = new SimpleDoubleProperty();
+    //region Position properties
+    private final SimpleDoubleProperty x1 = new SimpleDoubleProperty();
+    private final SimpleDoubleProperty y1 = new SimpleDoubleProperty();
+    private final SimpleDoubleProperty x2 = new SimpleDoubleProperty();
+    private final SimpleDoubleProperty y2 = new SimpleDoubleProperty();
+    //endregion
 
-    private SimpleDoubleProperty x1Scaled = new SimpleDoubleProperty();
-    private SimpleDoubleProperty y1Scaled = new SimpleDoubleProperty();
-    private SimpleDoubleProperty x2Scaled = new SimpleDoubleProperty();
-    private SimpleDoubleProperty y2Scaled = new SimpleDoubleProperty();
+    //region Scale properties
+    private final SimpleDoubleProperty x1Scaled = new SimpleDoubleProperty();
+    private final SimpleDoubleProperty y1Scaled = new SimpleDoubleProperty();
+    private final SimpleDoubleProperty x2Scaled = new SimpleDoubleProperty();
+    private final SimpleDoubleProperty y2Scaled = new SimpleDoubleProperty();
+    //endregion
 
-    private SimpleBooleanProperty arrowAVisible = new SimpleBooleanProperty(true);
-    private SimpleBooleanProperty arrowBVisible = new SimpleBooleanProperty(true);
+    //region Visible properties
+    private final SimpleBooleanProperty arrowAVisible = new SimpleBooleanProperty(true);
+    private final SimpleBooleanProperty arrowBVisible = new SimpleBooleanProperty(true);
+    //endregion
 
-    public static SimpleBooleanProperty contentVisible = new SimpleBooleanProperty(true);
+    public final static SimpleBooleanProperty contentVisible = new SimpleBooleanProperty(true);
 
-    private double EDGE_SCALER = 5;
+    //region Variables for edge look
+    private final double EDGE_SCALER = 5;
     private final double ARROW_ANGLE = Math.toRadians(20);
     private final double ARROW_LENGTH = 10;
+    //endregion
 
+    //region References
     private NodeUI node1, node2;
 
-    public Button contentBtn;
-
     public final Pane contentPane = new Pane();
-    public static ArrayList<EdgeUI> selectedEdges = new ArrayList<>();
-    public boolean removeText = true;
+    public Button contentBtn;
+    //endregion
 
+    public static ArrayList<EdgeUI> selectedEdges = new ArrayList<>();
+
+    public boolean removeText = true;
+    //endregion
+
+    //region Logic
     public EdgeUI(NodeUI node1, NodeUI node2) {
-        //Set the properties to the given values
+        //region Set the properties to the given values
         x1.set(node1.getLayoutX());
         y1.set(node1.getLayoutY());
         x2.set(node2.getLayoutX());
         y2.set(node2.getLayoutY());
+        //endregion
 
-        //Bind the properties to the nodes
+        //region Bind the properties to the nodes
         x1.bind(node1.layoutXProperty());
         y1.bind(node1.layoutYProperty());
         x2.bind(node2.layoutXProperty());
         y2.bind(node2.layoutYProperty());
+        //endregion
 
         this.node1 = node1;
         this.node2 = node2;
@@ -98,9 +115,9 @@ public class EdgeUI extends Group {
         contentBtn.visibleProperty().bind(contentVisible);
 
         //Set the select events for the content
-        contentBtn.setOnMousePressed(mouseEvent -> onContentPressed(mouseEvent));
+        contentBtn.setOnMousePressed(this::onContentPressed);
 
-        contentBtn.setOnMouseReleased(mouseEvent -> onContentReleased(mouseEvent));
+        contentBtn.setOnMouseReleased(this::onContentReleased);
 
         contentPane.getChildren().add(contentBtn);
 
@@ -175,13 +192,11 @@ public class EdgeUI extends Group {
             });
 
             //Rename all selected nodes
-            subRename2.setOnAction(actionEvent -> {
-                selectedEdges.forEach(edge -> {
-                    edge.contentBtn.getStyleClass().add("rename");
-                    removeText = true;
-                    edge.contentBtn.setOnKeyPressed(keyEvent -> setEdgeWeight(keyEvent, true));
-                });
-            });
+            subRename2.setOnAction(actionEvent -> selectedEdges.forEach(edge -> {
+                edge.contentBtn.getStyleClass().add("rename");
+                removeText = true;
+                edge.contentBtn.setOnKeyPressed(keyEvent -> setEdgeWeight(keyEvent, true));
+            }));
 
             renameMenu.getItems().addAll(subRename1, subRename2);
 
@@ -386,6 +401,7 @@ public class EdgeUI extends Group {
 
     //endregion
 
+    //region Style methods
     public void setNewEdgeStyle(Node node, String newStyle, String... exceptions) {
         removeAllStates(node, exceptions);
 
@@ -401,6 +417,7 @@ public class EdgeUI extends Group {
             for (String excepting : exceptions) {
                 if (node.getStyleClass().get(i).equals(excepting)) {
                     isExcepting = true;
+                    break;
                 }
             }
 
@@ -409,24 +426,23 @@ public class EdgeUI extends Group {
         }
 
         for (String state : statesToRemove) {
-            removeStates(node, state);
+            removeState(node, state);
         }
     }
 
-    public void removeStates(Node node, String... statesToRemove) {
+    public void removeState(Node node, String stateToRemove) {
         for (int i = 0; i < node.getStyleClass().size(); i++) {
-            for (String state : statesToRemove) {
-                if (node.getStyleClass().get(i).equals(state)) {
-                    if (node.getStyleClass().get(i).equals("rename")) {
-                        renameBtnReference.setOnKeyPressed(null);
-                    } else if (node.getStyleClass().get(i).equals("selected")) {
-                        selectedEdges.remove(node);
-                    }
-                    node.getStyleClass().remove(i);
+            if (node.getStyleClass().get(i).equals(stateToRemove)) {
+                if (stateToRemove.equals("rename")) {
+                    renameBtnReference.setOnKeyPressed(null);
+                } else if (stateToRemove.equals("selected")) {
+                    selectedEdges.remove(node);
                 }
+                node.getStyleClass().remove(i);
             }
         }
     }
+    //endregion
 
     /**
      * Updates the weight/length of the edge
@@ -447,12 +463,8 @@ public class EdgeUI extends Group {
             case BACK_SPACE -> text = deleteChar(text);
             case ENTER -> {
                 //Complete renaming
-                selectedEdges.forEach(edge -> {
-                    edge.removeStates(edge.contentBtn, "rename");
-                });
-                NodeUI.selectedNodes.forEach(node -> {
-                    node.removeStates("rename");
-                });
+                selectedEdges.forEach(edge -> edge.removeState(edge.contentBtn, "rename"));
+                NodeUI.selectedNodes.forEach(node -> node.removeState("rename"));
             }
             default -> {
                 //Add fracture sign in case shift and seven is pressed or the numpad devide button is pressed
@@ -496,6 +508,16 @@ public class EdgeUI extends Group {
         }
     }
 
+    /**
+     * Removes the edge from the graph and screen
+     */
+    public void removeEdge() {
+        paneReference.getChildren().remove(this);
+        getNode1().edges.remove(this);
+        getNode2().edges.remove(this);
+        deselectEdge(this);
+        graph.removeEdge(EDGE);
+    }
 
     //region Helper function
 
@@ -510,10 +532,10 @@ public class EdgeUI extends Group {
 
         //Gets all sub numbers behind and before an / and add it ti numbers
         for (int i = 0; i < operation.length(); i++) {
-            if (operation.substring(i, i+1).equals("/")) {
+            if (operation.charAt(i) == '/') {
                 numbers.add("");
             } else {
-                numbers.set(numbers.size()-1, numbers.get(numbers.size()-1) + operation.substring(i, i+1));
+                numbers.set(numbers.size()-1, numbers.get(numbers.size()-1) + operation.charAt(i));
             }
         }
 
@@ -537,7 +559,6 @@ public class EdgeUI extends Group {
 
         try {
             Double.parseDouble(string);
-            isNumber = true;
         } catch (Exception e) {
             isNumber = false;
         }
@@ -566,17 +587,6 @@ public class EdgeUI extends Group {
     }
 
     //endregion
-
-    /**
-     * Removes the edge from the graph and screen
-     */
-    public void removeEdge() {
-        paneReference.getChildren().remove(this);
-        getNode1().edges.remove(this);
-        getNode2().edges.remove(this);
-        deselectEdge(this);
-        graph.removeEdge(EDGE);
-    }
 
     //region Getters and setters
     public double getX1() {
@@ -656,5 +666,6 @@ public class EdgeUI extends Group {
     public void setContentVisible(boolean contentVisible) {
         this.contentVisible.set(contentVisible);
     }
+    //endregion
     //endregion
 }

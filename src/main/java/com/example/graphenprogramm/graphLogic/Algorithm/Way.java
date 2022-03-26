@@ -2,7 +2,6 @@ package com.example.graphenprogramm.graphLogic.Algorithm;
 
 import com.example.graphenprogramm.graphLogic.Edge;
 import com.example.graphenprogramm.graphLogic.Node;
-import javafx.beans.NamedArg;
 
 public class Way {
     private Node node;
