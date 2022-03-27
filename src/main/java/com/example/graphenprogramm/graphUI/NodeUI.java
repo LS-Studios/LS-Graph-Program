@@ -7,14 +7,11 @@ import com.example.graphenprogramm.graphLogic.Node;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Button;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuItem;
 import javafx.scene.input.*;
 
 import static com.example.graphenprogramm.Controller.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class NodeUI extends Button {
@@ -33,7 +30,6 @@ public class NodeUI extends Button {
     public static ArrayList<NodeUI> selectedNodes = new ArrayList<>();
 
     public boolean removeText = true;
-    private ArrayList<NodeUI> se;
     //endregion
 
     //region Logic
@@ -105,7 +101,6 @@ public class NodeUI extends Button {
         setOnMouseReleased(this::onNodeReleased);
         setOnMouseDragEntered(this::onNodeDragEntered);
         setOnMouseDragExited(this::onNodeDragExited);
-        setOnMouseMoved(mouseEvent -> { if (contextMenu != null) contextMenu.hide();});
         //endregion
 
         //Set position variables
@@ -130,7 +125,7 @@ public class NodeUI extends Button {
     private void onNodePressed(MouseEvent mouseEvent) {
         //Select node if left mouse button was pressed
         if (mouseEvent.isPrimaryButtonDown())
-            selectNode(this);
+            clickNode(this, mouseEvent);
 
         //Set drag positions
         startDragX = getLayoutX();
@@ -199,106 +194,6 @@ public class NodeUI extends Button {
                     edge.contentBtn.getStyleClass().remove("rename");
                 });
             });
-
-            //Create context menu
-
-            //region Rename menu
-
-            Menu renameMenu = new Menu("Rename");
-            MenuItem subRename1 = new MenuItem("Rename current");
-            MenuItem subRename2 = new MenuItem("Rename all selected nodes");
-
-            //Rename current node
-            subRename1.setOnAction(actionEvent -> {
-                getStyleClass().add("rename");
-                removeText = true;
-                setOnKeyPressed(keyEvent -> setNodeText(keyEvent, false));
-            });
-
-            //Rename all selected nodes
-            subRename2.setOnAction(actionEvent -> selectedNodes.forEach(node -> {
-                node.getStyleClass().add("rename");
-                removeText = true;
-                node.setOnKeyPressed(keyEvent -> setNodeText(keyEvent, true));
-            }));
-
-            renameMenu.getItems().addAll(subRename1, subRename2);
-
-            //endregion
-
-            //region Delete menu
-            Menu deleteMenu = new Menu("Delete");
-            MenuItem subDelete1 = new MenuItem("Delete current");
-            MenuItem subDelete2 = new MenuItem("Delete all selected");
-
-            //Delete current node
-            subDelete1.setOnAction(actionEvent -> removeNode());
-
-            //Delete all selected nodes and edges
-            subDelete2.setOnAction(actionEvent -> {
-                while (selectedNodes.size() > 0) {
-                    selectedNodes.get(selectedNodes.size()-1).removeNode();
-                }
-                while (EdgeUI.selectedEdges.size() > 0) {
-                    EdgeUI.selectedEdges.get(EdgeUI.selectedEdges.size()-1).removeEdge();
-                }
-            });
-
-            deleteMenu.getItems().addAll(subDelete1, subDelete2);
-            //endregion
-
-            //region Algorithm menu
-            Menu algorithmMenu = new Menu("Algorithm");
-            MenuItem subAlgorithm1 = new MenuItem("Set as start node");
-            MenuItem subAlgorithm2 = new MenuItem("Set as end node");
-
-            //Set start node
-            subAlgorithm1.setOnAction(actionEvent -> {
-                if (startNode != null) {
-                    startNode.getStyleClass().remove("startNode");
-
-                    if (getStyleClass().contains("endNode"))
-                        startNode.getStyleClass().remove("endNode");
-                }
-
-                if (!getStyleClass().contains("startNode"))
-                    getStyleClass().add("startNode");
-                startNode = this;
-            });
-
-            //Set end node
-            subAlgorithm2.setOnAction(actionEvent -> {
-                if (endNode != null) {
-                    endNode.getStyleClass().remove("endNode");
-
-                    if (getStyleClass().contains("startNode"))
-                        startNode.getStyleClass().remove("startNode");
-                }
-
-                if (!getStyleClass().contains("endNode"))
-                    getStyleClass().add("endNode");
-                endNode = this;
-            });
-
-            algorithmMenu.getItems().addAll(subAlgorithm1, subAlgorithm2);
-            //endregion
-
-            //Multiple items are selected
-            if (selectedNodes.size() > 1 || EdgeUI.selectedEdges.size() > 0 && selectedNodes.contains(this)) {
-                //Create menu for multiple items to rename and delete
-                if (selectedNodes.size() > 1)
-                    createContextMenu(Arrays.asList(renameMenu, deleteMenu, algorithmMenu), mouseEvent.getScreenX() - 10, mouseEvent.getScreenY() - 10);
-
-                //Create menu for multiple items to delete but just rename the current one
-                else
-                    createContextMenu(Arrays.asList(subRename1, deleteMenu, algorithmMenu), mouseEvent.getScreenX() - 10, mouseEvent.getScreenY() - 10);
-            }
-
-            //Just one or not enough items are selected
-            else {
-                //Create item to rename and delete just the current item
-                createContextMenu(Arrays.asList(subRename1, subDelete1, algorithmMenu), mouseEvent.getScreenX() - 10, mouseEvent.getScreenY() - 10);
-            }
         }
 
         node2 = null;
@@ -306,8 +201,8 @@ public class NodeUI extends Button {
     }
 
     private void onNodeDragDetected(MouseEvent e) {
-        //Add to back up
-        backupFiles.add(new GraphFile(nodes));
+        //Add to redo backup files
+        undoFiles.add(new GraphFile(nodes, true));
 
         //Create edge and drag it if drag on node is happening
         if (e.isPrimaryButtonDown()) {
@@ -323,6 +218,8 @@ public class NodeUI extends Button {
             draggedNode.toBack();
             draggedNode.edges.forEach(javafx.scene.Node::toBack);
         }
+
+        NodeUI.removeAlgorithmStates();
 
         startFullDrag();
     }
@@ -397,7 +294,7 @@ public class NodeUI extends Button {
      */
     public void moveNode(MouseEvent event) {
         //Snap to global grid when holding alt
-        if (altPressed) {
+        if (event.isAltDown()) {
             //Move the current one
             double gridValue = 20;
 
@@ -430,7 +327,7 @@ public class NodeUI extends Button {
             }
         }
         //Snap to local grid when holding control
-        else if (controlPressed) {
+        else if (event.isControlDown()) {
             //Move the current one
             double gridValue = 20;
             Position moveValue = new Position(event.getSceneX()-startDragX, event.getSceneY()-startDragY);
@@ -491,10 +388,10 @@ public class NodeUI extends Button {
     /**
      * Do select the node
      */
-    public static void selectNode(NodeUI nodeToSelect) {
-        if (!controlPressed) {
+    public static void clickNode(NodeUI nodeToSelect, MouseEvent event) {
+        if (!event.isControlDown()) {
             //Deselect all the other nodes and edges if shift is not pressed
-            if (!shiftPressed) {
+            if (!event.isShiftDown()) {
                 deselectSelectedNodes();
                 EdgeUI.deselectSelectedEdges();
             }
@@ -503,6 +400,7 @@ public class NodeUI extends Button {
             if (!nodeToSelect.getStyleClass().contains("selected"))
                 nodeToSelect.getStyleClass().add("selected");
 
+            nodeToSelect.NODE.setSelected(true);
             selectedNodes.add(nodeToSelect);
         }
 
@@ -510,16 +408,45 @@ public class NodeUI extends Button {
         else {
             nodeToSelect.removeAllStates("button", "nodeStyle");
         }
+
+        removeAlgorithmStates();
+    }
+
+    public void selectNode() {
+        //Select the given node
+        if (!getStyleClass().contains("selected"))
+            getStyleClass().add("selected");
+
+        NODE.setSelected(true);
+        selectedNodes.add(this);
     }
 
     /**
      * Deselecting all selected nodes
      */
     public static void deselectSelectedNodes() {
+        removeAlgorithmStates();
+
         //Reset all nodes to their base state
         while (selectedNodes.size() > 0) {
             selectedNodes.get(selectedNodes.size()-1).removeAllStates("button", "nodeStyle", "startNode", "endNode");
         }
+    }
+
+    public static void removeAlgorithmStates() {
+        //Remove the previous algorithm states
+        nodes.forEach(node -> {
+            node.removeState("checked");
+            node.removeState("inProgress");
+            node.removeState("path");
+
+            node.edges.forEach(edge -> {
+                edge.removeState(edge.edge, "path");
+                edge.removeState(edge.contentBtn, "path");
+                edge.removeState(edge.arrowA, "path");
+                edge.removeState(edge.arrowB, "path");
+            });
+        });
     }
 
     //endregion
@@ -558,8 +485,9 @@ public class NodeUI extends Button {
             if (getStyleClass().get(i).equals(stateToRemove)) {
                 if (stateToRemove.equals("rename")) {
                     renameBtnReference.setOnKeyPressed(null);
-                    selectedNodes.forEach(node -> node.setOnKeyPressed(null));
+                    nodes.forEach(node -> node.setOnKeyPressed(null));
                 } else if (stateToRemove.equals("selected")) {
+                    NODE.setSelected(false);
                     selectedNodes.remove(this);
                 }
                 getStyleClass().remove(i);

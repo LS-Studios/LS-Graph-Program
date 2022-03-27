@@ -13,6 +13,8 @@ public class Edge implements Serializable {
     private Node node2;
     private boolean pointToNode2;
 
+    private boolean isSelected = false;
+
     private double length;
 
     private Position edgeSide1Pos = new Position(0, 0);
@@ -36,6 +38,14 @@ public class Edge implements Serializable {
     //endregion
 
     //region Getter and setter
+
+    public boolean isSelected() {
+        return isSelected;
+    }
+
+    public void setSelected(boolean selected) {
+        isSelected = selected;
+    }
 
     public Position getEdgeSide1Pos() {
         return edgeSide1Pos;

@@ -11,8 +11,10 @@ import java.util.List;
 
 public class GraphFile implements Serializable {
     private List<Node> savedNodes;
+    private boolean saveExtraInformation;
 
-    public GraphFile(List<NodeUI> nodes) {
+    public GraphFile(List<NodeUI> nodes, boolean saveExtraInformation) {
+        this.saveExtraInformation = saveExtraInformation;
         this.savedNodes = createSavedNodes(nodes);
     }
 
@@ -30,6 +32,11 @@ public class GraphFile implements Serializable {
             Node saveNode = new Node(nodeUI.NODE.getName());
             saveNode.setPosition(new Position(nodeUI.getLayoutX(), nodeUI.getLayoutY()));
             saveNode.setID(count++);
+            if (saveExtraInformation) {
+                saveNode.setSelected(nodeUI.NODE.isSelected());
+                saveNode.setStartNode(nodeUI.NODE.isStartNode());
+                saveNode.setEndNode(nodeUI.NODE.isEndNode());
+            }
             workNodes.add(new Pair<>(saveNode, nodeUI.NODE.getID()));
         }
         //endregion
@@ -61,6 +68,8 @@ public class GraphFile implements Serializable {
                                                  edge.EDGE.getLength());
                     saveNodeEdge.setEdgeSide1Pos(new Position(edge.edge.getPoints().get(0), edge.edge.getPoints().get(1)));
                     saveNodeEdge.setEdgeSide2Pos(new Position(edge.edge.getPoints().get(2), edge.edge.getPoints().get(3)));
+                    if (saveExtraInformation)
+                        saveNodeEdge.setSelected(edge.EDGE.isSelected());
                     workNode1.getEdges().add(saveNodeEdge);
                     workNode2.getEdges().add(saveNodeEdge);
                 }
@@ -89,6 +98,9 @@ public class GraphFile implements Serializable {
             nodeUI.setText(node.getName());
             nodeUI.NODE = new Node(node.getName());
             nodeUI.NODE.setPosition(node.getPosition());
+            nodeUI.NODE.setSelected(node.isSelected());
+            nodeUI.NODE.setStartNode(node.isStartNode());
+            nodeUI.NODE.setEndNode(node.isEndNode());
             workNodes.add(new Pair<>(nodeUI, node.getID()));
         }
         //endregion
@@ -120,6 +132,7 @@ public class GraphFile implements Serializable {
                                              workNode2.NODE, edge.isPointToNode2(),
                                              edge.getLength());
                     edgeUI.EDGE = workEdge;
+                    edgeUI.EDGE.setSelected(edge.isSelected());
 
                     //Set weight text with check if the length is decimal or not
                     String length = String.valueOf(workEdge.getLength());

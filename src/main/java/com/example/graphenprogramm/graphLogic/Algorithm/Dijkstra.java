@@ -4,6 +4,8 @@ import com.example.graphenprogramm.Controller;
 import com.example.graphenprogramm.graphLogic.Node;
 import com.example.graphenprogramm.graphUI.EdgeUI;
 import com.example.graphenprogramm.graphUI.NodeUI;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 
 import java.util.*;
 
@@ -168,7 +170,16 @@ public class Dijkstra extends Algorithm {
             }
         });
         animationThread.setDaemon(true);
-        animationThread.start();
+
+        if (objectsOnWay.size() > 0)
+            animationThread.start();
+        else {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "No valid path found!", ButtonType.OK);
+            alert.showAndWait();
+            animationIsPlaying = false;
+            return;
+        }
+
 
         //Debug the debug list if debug is true
         if (debug) {

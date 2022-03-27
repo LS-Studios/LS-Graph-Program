@@ -13,6 +13,9 @@ public class Node implements Serializable {
     private Position position = new Position(0, 0);
     private ArrayList<Edge> edges = new ArrayList<>();
     private int ID;
+    private boolean isStartNode = false;
+    private boolean isEndNode = false;
+    private boolean isSelected = false;
 
     private static int count;
 
@@ -71,6 +74,30 @@ public class Node implements Serializable {
     //endregion
 
     //region Getter and setter
+
+    public boolean isStartNode() {
+        return isStartNode;
+    }
+
+    public void setStartNode(boolean startNode) {
+        isStartNode = startNode;
+    }
+
+    public boolean isEndNode() {
+        return isEndNode;
+    }
+
+    public void setEndNode(boolean endNode) {
+        isEndNode = endNode;
+    }
+
+    public boolean isSelected() {
+        return isSelected;
+    }
+
+    public void setSelected(boolean selected) {
+        isSelected = selected;
+    }
 
     public static int getCount() {
         return count;

@@ -6,17 +6,23 @@ import com.example.graphenprogramm.graphLogic.GraphFile;
 import com.example.graphenprogramm.graphLogic.Node;
 import com.example.graphenprogramm.graphUI.EdgeUI;
 import com.example.graphenprogramm.graphUI.NodeUI;
-import com.example.graphenprogramm.graphUI.Position;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.*;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
 import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
 import java.io.*;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ResourceBundle;
 
 public class Controller implements Initializable {
     //region Variables
@@ -52,7 +58,8 @@ public class Controller implements Initializable {
     public Button graphMenuBtn;
     @FXML
     public Button fileMenuBtn;
-
+    @FXML
+    public Button infoMenuBtn;
     //endregion
 
     //region Menu button references
@@ -62,8 +69,6 @@ public class Controller implements Initializable {
     public static Button renameBtnReference;
     @FXML
     public Button deleteSelectedBtn;
-    @FXML
-    public Button duplicateSelectedBtn;
     @FXML
     public Button selectAllBtn;
     @FXML
@@ -76,6 +81,16 @@ public class Controller implements Initializable {
     public Button startDijkstraPathBtn;
     @FXML
     public Button startDijkstraProgressBtn;
+    @FXML
+    public Button undoBtn;
+    @FXML
+    public Button redoBtn;
+    @FXML
+    public Button copyBtn;
+    @FXML
+    public Button pasteBtn;
+    @FXML
+    public Button duplicateSelectedBtn;
     @FXML
     public Button toggleWeightBtn;
     @FXML
@@ -97,17 +112,10 @@ public class Controller implements Initializable {
 
     public static NodeUI dragOverNode;
 
-    public static boolean shiftPressed = false;
-    public static boolean controlPressed = false;
-    public static boolean altPressed = false;
-
-    public static ContextMenu contextMenu;
-
-    public static javafx.scene.Node renameKeyListenerNode;
-
     private GraphFile duplicationFile;
     private GraphFile copyFile;
-    public static List<GraphFile> backupFiles = new ArrayList<>();
+    public static List<GraphFile> undoFiles = new ArrayList<>();
+    public static List<GraphFile> redoFiles = new ArrayList<>();
 
     //endregion
     //endregion
@@ -122,14 +130,8 @@ public class Controller implements Initializable {
         //region Global input
 
         //region Graph pane input
-        pane.setOnKeyPressed(keyEvent -> {
-            globalOnKeyPressed(keyEvent);
-        });
-        pane.setOnKeyReleased(keyEvent -> globalOnKeyReleased(keyEvent));
-        pane.setOnMouseMoved(mouseEvent -> {
-            if (contextMenu != null)
-                contextMenu.hide();
-        });
+        pane.setOnKeyPressed(this::globalOnKeyPressed);
+        pane.setOnKeyReleased(this::globalOnKeyReleased);
         pane.setOnDragOver(dragEvent -> {
             if (dragEvent.getDragboard().hasFiles()) {
                 /* allow for both copying and moving, whatever user chooses */
@@ -144,7 +146,7 @@ public class Controller implements Initializable {
                 for (File file : db.getFiles()) {
                     GraphFile graphFile = loadGraphFile(file);
                     if (graphFile != null)
-                        createNodesWithEdges(graphFile.createUIList());
+                        createNodesWithEdges(graphFile.createUIList(), true);
                 }
                 success = true;
             }
@@ -225,6 +227,39 @@ public class Controller implements Initializable {
             graphPane.setVisible(false);
             filePane.setVisible(true);
         });
+        infoMenuBtn.setOnAction(actionEvent -> {
+            Dialog dialog = new Alert(Alert.AlertType.INFORMATION,
+                    "Shortcuts:\n\n" +
+                    "Create node: Press/Drag left mouse button\n" +
+                    "Join/Move nodes: Drag right mouse button\n" +
+                    "Select: Press left mouse button\n" +
+                    "Select multiple: SHIFT + left mouse button\n" +
+                    "Deselect single: STRG + left mouse button\n\n" +
+                    "Deselect all: Press right mouse button\n\n" +
+                    "Rename selected: SHIFT + R\n\n" +
+                    "Delete selected: Back space\n" +
+                    "Delete all: ENTF\n\n" +
+                    "Select all: STRG + A\n\n" +
+                    "Set selected as start node: SHIFT + S\n" +
+                    "Set selected as end node: SHIFT + E\n\n" +
+                    "Start dijkstra path animation: SHIFT + P\n" +
+                    "Start dijkstra progress animation: ALT + P\n\n" +
+                    "Undo action: STRG + Z\n" +
+                    "Redo action: STRG + Y\n\n" +
+                    "Duplicate selected: SHIFT + D\n\n" +
+                    "Copy selected: STRG + C\n" +
+                    "Past selected: STRG + V\n\n" +
+                    "Toggle weights: SHIFT + T\n\n" +
+                    "Save file: STRG + S\n" +
+                    "Load file: STRG + O\n\n" +
+                    "Snap to local grid: Drag + STRG\n" +
+                    "Snap to global grid: Drag + ALT",
+                    ButtonType.CLOSE);
+            dialog.setTitle("Information");
+            dialog.setHeaderText("Graph-Program created by Lennard Stubbe");
+            dialog.setGraphic(null);
+            dialog.showAndWait();
+        });
         //endregion
 
         //endregion
@@ -233,9 +268,6 @@ public class Controller implements Initializable {
 
         //region Edit menu
         renameSelectedBtn.setOnAction(actionEvent -> {
-            //Add to back up
-            backupFiles.add(new GraphFile(nodes));
-
             nodes.forEach(node -> {
                 node.removeState("rename");
                 node.edges.forEach(edge -> edge.removeState(edge.contentBtn, "rename"));
@@ -253,8 +285,8 @@ public class Controller implements Initializable {
         });
 
         deleteSelectedBtn.setOnAction(actionEvent -> {
-            //Add to back up
-            backupFiles.add(new GraphFile(nodes));
+            //Add to undo backup files
+            undoFiles.add(new GraphFile(nodes, true));
 
             while (NodeUI.selectedNodes.size() > 0) {
                 NodeUI.selectedNodes.get(NodeUI.selectedNodes.size()-1).removeNode();
@@ -262,19 +294,6 @@ public class Controller implements Initializable {
             while (EdgeUI.selectedEdges.size() > 0) {
                 EdgeUI.selectedEdges.get(EdgeUI.selectedEdges.size()-1).removeEdge();
             }
-        });
-        duplicateSelectedBtn.setOnAction(actionEvent -> {
-            //Add to back up
-            backupFiles.add(new GraphFile(nodes));
-
-            //Stop renaming
-            nodes.forEach(node -> {
-                node.removeState("rename");
-                node.edges.forEach(edge -> edge.removeState(edge.contentBtn, "rename"));
-            });
-
-            duplicationFile = new GraphFile(NodeUI.selectedNodes);
-            createNodesWithEdges(duplicationFile.createUIList());
         });
         selectAllBtn.setOnAction(actionEvent -> {
             //Stop renaming
@@ -336,6 +355,30 @@ public class Controller implements Initializable {
         //endregion
 
         //region Graph menu
+        undoBtn.setOnAction(actionEvent -> undo());
+        redoBtn.setOnAction(actionEvent -> redo());
+        copyBtn.setOnAction(actionEvent -> copyFile = new GraphFile(nodes, false));
+        pasteBtn.setOnAction(actionEvent -> {
+            if (copyFile != null) {
+                //Add to undo backup files
+                undoFiles.add(new GraphFile(nodes, true));
+
+                createNodesWithEdges(copyFile.createUIList(), false);
+            }
+        });
+        duplicateSelectedBtn.setOnAction(actionEvent -> {
+            //Add to undo backup files
+            undoFiles.add(new GraphFile(nodes, true));
+
+            //Stop renaming
+            nodes.forEach(node -> {
+                node.removeState("rename");
+                node.edges.forEach(edge -> edge.removeState(edge.contentBtn, "rename"));
+            });
+
+            duplicationFile = new GraphFile(NodeUI.selectedNodes, false);
+            createNodesWithEdges(duplicationFile.createUIList(), false);
+        });
         toggleWeightBtn.setOnAction(actionEvent -> {
             //Stop renaming
             nodes.forEach(node -> {
@@ -402,8 +445,8 @@ public class Controller implements Initializable {
         switch (keyEvent.getCode()) {
             //Delete selected shortcut
             case BACK_SPACE -> {
-                //Add to back up
-                backupFiles.add(new GraphFile(nodes));
+                //Add to undo backup files
+                undoFiles.add(new GraphFile(nodes, true));
 
                 if (NodeUI.selectedNodes.size() > 0) {
                     List<NodeUI> nodesToRemove = new ArrayList<>(NodeUI.selectedNodes);
@@ -418,107 +461,127 @@ public class Controller implements Initializable {
             case DELETE -> deleteAll(true);
             //Select all shortcut
             case A -> {
-                if (controlPressed) {
+                if (keyEvent.isControlDown()) {
                     selectAll();
                 }
             }
             //Duplicate shortcut
             case D -> {
-                if (shiftPressed) {
-                    backupFiles.add(new GraphFile(nodes));
+                if (keyEvent.isShiftDown()) {
+                    //Add to undo backup files
+                    undoFiles.add(new GraphFile(nodes, true));
 
-                    duplicationFile = new GraphFile(NodeUI.selectedNodes);
-                    createNodesWithEdges(duplicationFile.createUIList());
+                    duplicationFile = new GraphFile(NodeUI.selectedNodes, false);
+                    createNodesWithEdges(duplicationFile.createUIList(), false);
                 }
             }
             //Set end node shortcut
             case E -> {
-                if (shiftPressed) {
-                    backupFiles.add(new GraphFile(nodes));
+                if (keyEvent.isShiftDown()) {
+                    undoFiles.add(new GraphFile(nodes, true));
                     setEndNode();
                 }
             }
             //Save + start node shortcut
             case S -> {
-                if (controlPressed) {
+                if (keyEvent.isControlDown()) {
                     saveFile();
-                } else if (shiftPressed) {
+                } else if (keyEvent.isShiftDown()) {
                     setStartNode();
                 }
             }
             //Open shortcut
             case O -> {
-                if (controlPressed) {
+                if (keyEvent.isControlDown()) {
                     loadFile();
                 }
             }
             //Rename shortcut
             case R -> {
-                if (shiftPressed) {
-                    if (NodeUI.selectedNodes.size() > 0) {
-                        renameKeyListenerNode = NodeUI.selectedNodes.get(0);
+                if (keyEvent.isShiftDown()) {
+                    if (NodeUI.selectedNodes.size() > 0 || EdgeUI.selectedEdges.size() > 0) {
                         renameSelected(null);
                     }
                 }
             }
             //Toggle weights shortcut
             case T -> {
-                if (shiftPressed) {
+                if (keyEvent.isShiftDown()) {
                     boolean visible = !nodes.get(0).edges.get(0).isContentVisible();
                     nodes.forEach(node -> node.edges.forEach(edge -> edge.setContentVisible(visible)));
                 }
             }
             //Start algorithm shortcut
             case P -> {
-                if (shiftPressed) {
+                if (keyEvent.isShiftDown()) {
                     startDijkstraPath();
-                } else if (altPressed) {
+                } else if (keyEvent.isAltDown()) {
                     startDijkstraProgress();
                 }
             }
             //Copy shortcut
             case C -> {
-                if (controlPressed) {
-                    copyFile = new GraphFile(NodeUI.selectedNodes);
+                if (keyEvent.isControlDown()) {
+                    copyFile = new GraphFile(NodeUI.selectedNodes, false);
                 }
             }
             //Past shortcut
             case V -> {
-                if (controlPressed) {
+                if (keyEvent.isControlDown()) {
                     if (copyFile != null) {
-                        //Add to back up
-                        backupFiles.add(new GraphFile(nodes));
+                        //Add to undo backup files
+                        undoFiles.add(new GraphFile(nodes, true));
 
-                        createNodesWithEdges(copyFile.createUIList());
+                        createNodesWithEdges(copyFile.createUIList(), false);
                     }
                 }
             }
+            //Cut shortcut
+            case X -> {
+                if (keyEvent.isControlDown()) {
+                    //Add to undo backup files
+                    undoFiles.add(new GraphFile(nodes, true));
+
+                    copyFile = new GraphFile(NodeUI.selectedNodes, true);
+
+                    if (NodeUI.selectedNodes.size() > 0) {
+                        List<NodeUI> nodesToRemove = new ArrayList<>(NodeUI.selectedNodes);
+                        nodesToRemove.forEach(NodeUI::removeNode);
+                    }
+                    if (EdgeUI.selectedEdges.size() > 0) {
+                        List<EdgeUI> edgesToRemove = new ArrayList<>(EdgeUI.selectedEdges);
+                        edgesToRemove.forEach(EdgeUI::removeEdge);
+                    }
+                }
+            }
+            //Load undo backup shortcut
             case Z -> {
-                if (controlPressed) {
-                    if (backupFiles.size() > 0) {
-                        deleteAll(false);
-                        createNodesWithEdges(backupFiles.get(backupFiles.size()-1).createUIList());
-                        backupFiles.remove(backupFiles.size()-1);
-                    }
+                if (keyEvent.isControlDown()) {
+                    undo();
                 }
             }
-            case SHIFT -> shiftPressed = true;
-            case CONTROL -> controlPressed = true;
-            case ALT -> altPressed = true;
+            //Load redo backup shortcut
+            case Y -> {
+                if (keyEvent.isControlDown()) {
+                    redo();
+                }
+            }
         }
+        keyEvent.consume();
     }
 
     private void globalOnKeyReleased(KeyEvent keyEvent) {
         switch (keyEvent.getCode()) {
-            case SHIFT -> shiftPressed = false;
-            case CONTROL -> controlPressed = false;
-            case ALT -> altPressed = false;
         }
+        keyEvent.consume();
     }
     //endregion
 
     //region Menu methods
     private void renameSelected(javafx.scene.Node nodeToRename) {
+        //Add to undo backup files
+        undoFiles.add(new GraphFile(nodes, true));
+
         NodeUI.selectedNodes.forEach(node -> {
             node.getStyleClass().add("rename");
             node.removeText = true;
@@ -538,6 +601,9 @@ public class Controller implements Initializable {
     }
 
     private void setStartNode() {
+        //Add to undo backup files
+        undoFiles.add(new GraphFile(nodes, true));
+
         if (NodeUI.selectedNodes.size() > 0) {
             if (NodeUI.startNode != null) {
                 NodeUI.startNode.getStyleClass().remove("startNode");
@@ -549,10 +615,14 @@ public class Controller implements Initializable {
             if (!NodeUI.selectedNodes.get(0).getStyleClass().contains("startNode"))
                 NodeUI.selectedNodes.get(0).getStyleClass().add("startNode");
             NodeUI.startNode = NodeUI.selectedNodes.get(0);
+            NodeUI.selectedNodes.get(0).NODE.setStartNode(true);
         }
     }
 
     private void setEndNode() {
+        //Add to undo backup files
+        undoFiles.add(new GraphFile(nodes, true));
+
         if (NodeUI.selectedNodes.size() > 0) {
             if (NodeUI.endNode != null) {
                 NodeUI.endNode.getStyleClass().remove("endNode");
@@ -564,6 +634,75 @@ public class Controller implements Initializable {
             if (!NodeUI.selectedNodes.get(0).getStyleClass().contains("endNode"))
                 NodeUI.selectedNodes.get(0).getStyleClass().add("endNode");
             NodeUI.endNode = NodeUI.selectedNodes.get(0);
+            NodeUI.selectedNodes.get(0).NODE.setEndNode(true);
+        }
+    }
+
+    private void undo() {
+        if (undoFiles.size() > 0) {
+            //Create redo backup file
+            redoFiles.add(new GraphFile(nodes, true));
+
+            deleteAll(false);
+            createNodesWithEdges(undoFiles.get(undoFiles.size()-1).createUIList(), true);
+            undoFiles.remove(undoFiles.size()-1);
+        }
+    }
+
+    private void redo() {
+        if (redoFiles.size() > 0) {
+            //Create backup file
+            undoFiles.add(new GraphFile(nodes, true));
+
+            deleteAll(false);
+            createNodesWithEdges(redoFiles.get(redoFiles.size()-1).createUIList(), true);
+            redoFiles.remove(redoFiles.size()-1);
+        }
+    }
+
+    public void startDijkstraPath() {
+        //Start animation only if none exists yet
+        if (!Algorithm.animationIsPlaying) {
+            //Remove the previous algorithm states
+            nodes.forEach(node -> {
+                node.removeState("checked");
+                node.removeState("inProgress");
+                node.removeState("path");
+
+                node.edges.forEach(edge -> {
+                    edge.removeState(edge.edge, "path");
+                    edge.removeState(edge.contentBtn, "path");
+                    edge.removeState(edge.arrowA, "path");
+                    edge.removeState(edge.arrowB, "path");
+                });
+            });
+
+            //Start showing dijkstra path animation
+            if (NodeUI.startNode != null && NodeUI.endNode != null)
+                graph.setDijkstraAlgorithmUp(NodeUI.startNode.NODE, NodeUI.endNode.NODE).showPath(200, false);
+        }
+    }
+
+    public void startDijkstraProgress () {
+        //Start animation only if none exists yet
+        if (!Algorithm.animationIsPlaying) {
+            //Remove the previous algorithm states
+            nodes.forEach(node -> {
+                node.removeState("checked");
+                node.removeState("inProgress");
+                node.removeState("path");
+
+                node.edges.forEach(edge -> {
+                    edge.removeState(edge.edge, "path");
+                    edge.removeState(edge.contentBtn, "path");
+                    edge.removeState(edge.arrowA, "path");
+                    edge.removeState(edge.arrowB, "path");
+                });
+            });
+
+            //Start showing dijkstra progress animation
+            if (NodeUI.startNode != null && NodeUI.endNode != null)
+                graph.setDijkstraAlgorithmUp(NodeUI.startNode.NODE, NodeUI.endNode.NODE).showProgress(350);
         }
     }
     //endregion
@@ -583,15 +722,15 @@ public class Controller implements Initializable {
         File saveGraphFile = fileChooser.showSaveDialog(Main.mainStage);
 
         //Create and save the graph file to the given path
-        saveGraphFile(saveGraphFile, new GraphFile(nodes));
+        saveGraphFile(saveGraphFile, new GraphFile(nodes, false));
     }
 
     /**
      * Do load a file with a FileChooser
      */
     private void loadFile() {
-        //Add to back up
-        backupFiles.add(new GraphFile(nodes));
+        //Add to undo backup files
+        undoFiles.add(new GraphFile(nodes, true));
 
         //Create the file chooser and set the title as well as the extension filter
         FileChooser fileChooser = new FileChooser();
@@ -606,7 +745,7 @@ public class Controller implements Initializable {
         //Load the graph file from the given path and create it
         GraphFile graphFile = loadGraphFile(graphFileToOpen);
         if (graphFile != null)
-            createNodesWithEdges(graphFile.createUIList());
+            createNodesWithEdges(graphFile.createUIList(), false);
     }
 
     /**
@@ -661,73 +800,18 @@ public class Controller implements Initializable {
 
     //endregion
 
-    //region Algorithm actions
-
-    public void startDijkstraPath() {
-        //Start animation only if none exists yet
-        if (!Algorithm.animationIsPlaying) {
-            //Remove the previous algorithm states
-            nodes.forEach(node -> {
-                node.removeState("checked");
-                node.removeState("inProgress");
-                node.removeState("path");
-
-                node.edges.forEach(edge -> {
-                    edge.removeState(edge.edge, "path");
-                    edge.removeState(edge.contentBtn, "path");
-                    edge.removeState(edge.arrowA, "path");
-                    edge.removeState(edge.arrowB, "path");
-                });
-            });
-
-            //Start showing dijkstra path animation
-            if (NodeUI.startNode != null && NodeUI.endNode != null)
-                graph.setDijkstraAlgorithmUp(NodeUI.startNode.NODE, NodeUI.endNode.NODE).showPath(200, false);
-        }
-    }
-    public void startDijkstraProgress () {
-        //Start animation only if none exists yet
-        if (!Algorithm.animationIsPlaying) {
-            //Remove the previous algorithm states
-            nodes.forEach(node -> {
-                node.removeState("checked");
-                node.removeState("inProgress");
-                node.removeState("path");
-
-                node.edges.forEach(edge -> {
-                    edge.removeState(edge.edge, "path");
-                    edge.removeState(edge.contentBtn, "path");
-                    edge.removeState(edge.arrowA, "path");
-                    edge.removeState(edge.arrowB, "path");
-                });
-            });
-
-            //Start showing dijkstra progress animation
-            if (NodeUI.startNode != null && NodeUI.endNode != null)
-                graph.setDijkstraAlgorithmUp(NodeUI.startNode.NODE, NodeUI.endNode.NODE).showProgress(350);
-        }
-    }
-
-    //endregion
-
     //region Graph events
 
     public void onGraphPressed(MouseEvent event) {
         if (event.isPrimaryButtonDown()) {
-            //Add to back up
-            backupFiles.add(new GraphFile(nodes));
+            //Add to undo backup files
+            undoFiles.add(new GraphFile(nodes, true));
 
             node1 = createNode(event.getX(), event.getY());
-
-            nodes.forEach(node -> {
-                node.removeAllStates("button", "nodeStyle", "startNode", "endNode");
-
-                node.edges.forEach(edge -> {
-                    edge.removeAllStates(edge.edge,"null");
-                    edge.removeAllStates(edge.contentBtn,"weightStyle");
-                });
-            });
         }
+
+        NodeUI.deselectSelectedNodes();
+        EdgeUI.deselectSelectedEdges();
     }
 
     public void onGraphDragDetected(MouseEvent event) {
@@ -741,6 +825,7 @@ public class Controller implements Initializable {
 
     public void onGraphDragged(MouseEvent event) {
         if (node2 != null) {
+            event.isControlDown();
             node2.moveNode(event);
         }
     }
@@ -760,71 +845,6 @@ public class Controller implements Initializable {
             dragOverNode = null;
         }
 
-        //Create options context menu
-        if (event.getButton() == MouseButton.SECONDARY && event.isStillSincePress()) {
-            //region Algorithm menu
-
-            Menu algorithmMenu = new Menu("Algorithm");
-            MenuItem subAlgorithm1 = new MenuItem("Dijkstra path");
-            MenuItem subAlgorithm2 = new MenuItem("Dijkstra progress");
-
-            //Set dijkstra calculation up and calculate the path
-            subAlgorithm1.setOnAction(actionEvent -> startDijkstraPath());
-            subAlgorithm2.setOnAction(actionEvent -> startDijkstraProgress());
-
-            algorithmMenu.getItems().addAll(subAlgorithm1, subAlgorithm2);
-
-            //endregion
-
-            //region Edit options
-
-            Menu editMenu = new Menu("Edit");
-            MenuItem item1 = new MenuItem("Toggle weight");
-            MenuItem item2 = new MenuItem("Duplicate selected nodes");
-            MenuItem item3 = new MenuItem("Select all");
-            MenuItem item4 = new MenuItem("Delete all");
-
-            //Toggle the visibility if the weights
-            item1.setOnAction(actionEvent -> {
-                boolean visible = !nodes.get(0).edges.get(0).isContentVisible();
-                nodes.forEach(node -> node.edges.forEach(edge -> edge.setContentVisible(visible)));
-            });
-
-            item2.setOnAction(actionEvent -> {
-                duplicationFile = new GraphFile(NodeUI.selectedNodes);
-                createNodesWithEdges(duplicationFile.createUIList());
-            });
-
-            //Select all nodes in the graph
-            item3.setOnAction(actionEvent -> selectAll());
-
-            //Delete all nodes in the graph
-            item4.setOnAction(actionEvent -> deleteAll(true));
-
-            if (NodeUI.selectedNodes.size() > 0)
-                editMenu.getItems().addAll(item1, item2, item3, item4);
-            else
-                editMenu.getItems().addAll(item1, item3, item4);
-
-            //endregion
-
-            //region file menu
-            Menu fileMenu = new Menu("File");
-            MenuItem subFile1 = new MenuItem("Save");
-            MenuItem subFile2 = new MenuItem("Load");
-
-            //Set dijkstra calculation up and calculate the path
-            subFile1.setOnAction(actionEvent -> saveFile());
-
-            subFile2.setOnAction(actionEvent -> loadFile());
-
-            fileMenu.getItems().addAll(subFile1, subFile2);
-            //endregion
-
-            //Create the menu
-            createContextMenu(Arrays.asList(algorithmMenu, editMenu, fileMenu), event.getScreenX() - 10, event.getScreenY() - 10);
-        }
-
         node1 = null;
         node2 = null;
     }
@@ -833,7 +853,7 @@ public class Controller implements Initializable {
 
     //region Create methods
 
-    public static void createNodesWithEdges(List<NodeUI> nodesToCreate) {
+    public static void createNodesWithEdges(List<NodeUI> nodesToCreate, boolean useExtraInformation) {
         //Deselect all nodes and edges
         NodeUI.deselectSelectedNodes();
         EdgeUI.deselectSelectedEdges();
@@ -845,12 +865,24 @@ public class Controller implements Initializable {
             createNode(node);
 
             //Select the created node
-            if (!node.getStyleClass().contains("selected"))
-                node.getStyleClass().add("selected");
-
-            //Add the new node to the selected nodes
-            if (!NodeUI.selectedNodes.contains(node))
-                NodeUI.selectedNodes.add(node);
+            if (useExtraInformation) {
+                if (node.NODE.isSelected()) {
+                    node.selectNode();
+                }
+                if (node.NODE.isStartNode() && NodeUI.startNode == null) {
+                    if (!node.getStyleClass().contains("startNode"))
+                        node.getStyleClass().add("startNode");
+                    NodeUI.startNode = node;
+                }
+                if (node.NODE.isEndNode() && NodeUI.endNode == null) {
+                    if (!node.getStyleClass().contains("endNode"))
+                        node.getStyleClass().add("endNode");
+                    NodeUI.endNode = node;
+                }
+            }
+            else {
+                node.selectNode();
+            }
 
             //Create edges
             for (EdgeUI edge : node.edges) {
@@ -859,13 +891,12 @@ public class Controller implements Initializable {
                     paneReference.getChildren().add(edge);
                 }
 
-                //Select the edge
-                if (!edge.contentBtn.getStyleClass().contains("selected"))
-                    edge.contentBtn.getStyleClass().add("selected");
-
-                //Add the new edge to the selected edges
-                if (!EdgeUI.selectedEdges.contains(edge))
-                    EdgeUI.selectedEdges.add(edge);
+                if (useExtraInformation) {
+                    if (edge.EDGE.isSelected())
+                        edge.selectEdge();
+                }
+                else
+                    edge.selectEdge();
             }
         }
     }
@@ -914,21 +945,6 @@ public class Controller implements Initializable {
         return edge;
     }
 
-    public static void createContextMenu(List<MenuItem> menuItems, double x, double y) {
-        //Hide existing context menu
-        if (contextMenu != null) {
-            contextMenu.hide();
-        }
-
-        contextMenu = new ContextMenu();
-
-        //Add all given items to created context menu
-        contextMenu.getItems().addAll(menuItems);
-
-        //Show the context menu
-        contextMenu.show(paneReference, x, y);
-    }
-
     //endregion
 
     //region Global methods
@@ -963,9 +979,9 @@ public class Controller implements Initializable {
      * Delete all the nodes and edges
      */
     public static void deleteAll(boolean createBackup) {
-        //Add to back up
+        //Add to undo backup files
         if (createBackup)
-            backupFiles.add(new GraphFile(nodes));
+            undoFiles.add(new GraphFile(nodes, true));
 
         //loop through the nodes list and remove the nodes plus edges from the screen
         nodes.forEach(node -> {
@@ -982,6 +998,9 @@ public class Controller implements Initializable {
         //Reset the node count
         NodeUI.count = 0;
         nodes.clear();
+
+        NodeUI.startNode = null;
+        NodeUI.endNode = null;
 
         NodeUI.selectedNodes.clear();
         EdgeUI.selectedEdges.clear();

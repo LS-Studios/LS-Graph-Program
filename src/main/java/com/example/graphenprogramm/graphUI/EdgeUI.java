@@ -1,14 +1,11 @@
 package com.example.graphenprogramm.graphUI;
 
-import com.example.graphenprogramm.Controller;
 import com.example.graphenprogramm.graphLogic.Edge;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuItem;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
@@ -17,7 +14,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.shape.Polyline;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.example.graphenprogramm.Controller.*;
@@ -139,7 +135,7 @@ public class EdgeUI extends Group {
         //On left mouse click
         if (mouseEvent.isPrimaryButtonDown()) {
             //Change the arrow direction
-            if (selectedEdges.contains(this) && !controlPressed) {
+            if (selectedEdges.contains(this) && !mouseEvent.isControlDown()) {
                 if (isArrowAVisible() && isArrowBVisible()) {
                     setArrowAVisible(false);
                     setArrowBVisible(true);
@@ -159,7 +155,7 @@ public class EdgeUI extends Group {
             }
 
             //Select the edge
-            selectEdge(this);
+            clickEdge(this, mouseEvent);
         }
     }
 
@@ -175,73 +171,7 @@ public class EdgeUI extends Group {
                     edge.contentBtn.getStyleClass().remove("rename");
                 });
             });
-
-            //Create context menu
-
-            //region Rename menu
-
-            Menu renameMenu = new Menu("Rename");
-            MenuItem subRename1 = new MenuItem("Rename current");
-            MenuItem subRename2 = new MenuItem("Rename all selected nodes");
-
-            //Rename current node
-            subRename1.setOnAction(actionEvent -> {
-                contentBtn.getStyleClass().add("rename");
-                removeText = true;
-                contentBtn.setOnKeyPressed(keyEvent -> setEdgeWeight(keyEvent, false));
-            });
-
-            //Rename all selected nodes
-            subRename2.setOnAction(actionEvent -> selectedEdges.forEach(edge -> {
-                edge.contentBtn.getStyleClass().add("rename");
-                removeText = true;
-                edge.contentBtn.setOnKeyPressed(keyEvent -> setEdgeWeight(keyEvent, true));
-            }));
-
-            renameMenu.getItems().addAll(subRename1, subRename2);
-
-            //endregion
-
-            //region Delete menu
-            Menu deleteMenu = new Menu("Delete");
-            MenuItem subDelete1 = new MenuItem("Delete current");
-            MenuItem subDelete2 = new MenuItem("Delete all selected");
-
-            //Delete current node
-            subDelete1.setOnAction(actionEvent -> removeEdge());
-
-            //Delete all selected nodes and edges
-            subDelete2.setOnAction(actionEvent -> {
-                while (selectedEdges.size() > 0) {
-                    selectedEdges.get(selectedEdges.size()-1).removeEdge();
-                }
-
-                while (NodeUI.selectedNodes.size() > 0) {
-                    NodeUI.selectedNodes.get(NodeUI.selectedNodes.size()-1).removeNode();
-                }
-            });
-
-            deleteMenu.getItems().addAll(subDelete1, subDelete2);
-            //endregion
-
-            //Multiple items are selected
-            if (selectedEdges.size() > 1 || NodeUI.selectedNodes.size() > 0 && selectedEdges.contains(this)) {
-                //Create menu for multiple items to rename and delete
-                if (selectedEdges.size() > 1)
-                    createContextMenu(Arrays.asList(renameMenu, deleteMenu), mouseEvent.getScreenX() - 10, mouseEvent.getScreenY() - 10);
-
-                    //Create menu for multiple items to delete but just rename the current one
-                else
-                    createContextMenu(Arrays.asList(subRename1, deleteMenu), mouseEvent.getScreenX() - 10, mouseEvent.getScreenY() - 10);
-            }
-
-            //Just one or not enough items are selected
-            else {
-                //Create item to rename and delete just the current item
-                createContextMenu(Arrays.asList(subRename1, subDelete1), mouseEvent.getScreenX() - 10, mouseEvent.getScreenY() - 10);
-            }
         }
-
 
         setStyleUp();
     }
@@ -352,35 +282,47 @@ public class EdgeUI extends Group {
     /**
      * Do select the clicked content
      */
-    public static void selectEdge(EdgeUI edgeToSelect) {
-        if (!controlPressed) {
+    public static void clickEdge(EdgeUI edgeToSelect, MouseEvent event) {
+        if (!event.isControlDown()) {
             //Deselect all the other edges and nodes if shift is not pressed
-            if (!Controller.shiftPressed) {
+            if (!event.isShiftDown()) {
                 deselectSelectedEdges();
                 NodeUI.deselectSelectedNodes();
             }
 
             //Select the given edge
-            if (!edgeToSelect.contentBtn.getStyleClass().contains("selected"))
-                edgeToSelect.contentBtn.getStyleClass().add("selected");
-
-            selectedEdges.add(edgeToSelect);
+            edgeToSelect.selectEdge();
         }
 
         //Deselect if control is pressed
         else {
             deselectEdge(edgeToSelect);
         }
+
+        NodeUI.removeAlgorithmStates();
+    }
+
+    public void selectEdge() {
+        //Select the given edge
+        if (!contentBtn.getStyleClass().contains("selected"))
+            contentBtn.getStyleClass().add("selected");
+
+        EDGE.setSelected(true);
+
+        selectedEdges.add(this);
     }
 
     /**
      * Deselect all selected edges
      */
     public static void deselectSelectedEdges() {
+        NodeUI.removeAlgorithmStates();
+
         //Reset all nodes to their base state
         selectedEdges.forEach(edge -> {
             edge.removeAllStates(edge.contentBtn, "button", "weightStyle", "endNode", "startNode");
             edge.setStyleUp();
+            edge.EDGE.setSelected(false);
         });
 
         //Clear the list of selected edges
@@ -394,6 +336,8 @@ public class EdgeUI extends Group {
         //Reset all edges to their base state
         edgeToDeselect.removeAllStates(edgeToDeselect.contentBtn, "button", "weightStyle", "endNode", "startNode");
         edgeToDeselect.setStyleUp();
+
+        edgeToDeselect.EDGE.setSelected(false);
 
         //Remove the given edge from the list
         selectedEdges.remove(edgeToDeselect);
