@@ -165,7 +165,7 @@ public class Dijkstra extends Algorithm {
                 //Add an delay
                 try {
                     Thread.sleep(animationSpeed);
-                } catch (InterruptedException e) {
+                } catch (InterruptedException ignored) {
                 }
             }
         });

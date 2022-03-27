@@ -8,7 +8,6 @@ import com.example.graphenprogramm.graphUI.EdgeUI;
 import com.example.graphenprogramm.graphUI.NodeUI;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -16,7 +15,6 @@ import javafx.scene.control.Dialog;
 import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
-import javafx.stage.Stage;
 
 import java.io.*;
 import java.net.URL;
@@ -131,7 +129,6 @@ public class Controller implements Initializable {
 
         //region Graph pane input
         pane.setOnKeyPressed(this::globalOnKeyPressed);
-        pane.setOnKeyReleased(this::globalOnKeyReleased);
         pane.setOnDragOver(dragEvent -> {
             if (dragEvent.getDragboard().hasFiles()) {
                 /* allow for both copying and moving, whatever user chooses */
@@ -164,7 +161,6 @@ public class Controller implements Initializable {
             node.edges.forEach(edge -> edge.removeState(edge.contentBtn, "rename"));
         }));
         menuPane.setOnKeyPressed(this::globalOnKeyPressed);
-        menuPane.setOnKeyReleased(this::globalOnKeyReleased);
         //endregion
 
         //endregion
@@ -228,32 +224,46 @@ public class Controller implements Initializable {
             filePane.setVisible(true);
         });
         infoMenuBtn.setOnAction(actionEvent -> {
-            Dialog dialog = new Alert(Alert.AlertType.INFORMATION,
-                    "Shortcuts:\n\n" +
-                    "Create node: Press/Drag left mouse button\n" +
-                    "Join/Move nodes: Drag right mouse button\n" +
-                    "Select: Press left mouse button\n" +
-                    "Select multiple: SHIFT + left mouse button\n" +
-                    "Deselect single: STRG + left mouse button\n\n" +
-                    "Deselect all: Press right mouse button\n\n" +
-                    "Rename selected: SHIFT + R\n\n" +
-                    "Delete selected: Back space\n" +
-                    "Delete all: ENTF\n\n" +
-                    "Select all: STRG + A\n\n" +
-                    "Set selected as start node: SHIFT + S\n" +
-                    "Set selected as end node: SHIFT + E\n\n" +
-                    "Start dijkstra path animation: SHIFT + P\n" +
-                    "Start dijkstra progress animation: ALT + P\n\n" +
-                    "Undo action: STRG + Z\n" +
-                    "Redo action: STRG + Y\n\n" +
-                    "Duplicate selected: SHIFT + D\n\n" +
-                    "Copy selected: STRG + C\n" +
-                    "Past selected: STRG + V\n\n" +
-                    "Toggle weights: SHIFT + T\n\n" +
-                    "Save file: STRG + S\n" +
-                    "Load file: STRG + O\n\n" +
-                    "Snap to local grid: Drag + STRG\n" +
-                    "Snap to global grid: Drag + ALT",
+            Dialog<ButtonType> dialog = new Alert(Alert.AlertType.INFORMATION,
+                    """
+                            Shortcuts:
+
+                            Create node: Press/Drag left mouse button
+                            Join/Move nodes: Drag right mouse button
+                            Select: Press left mouse button
+                            Select multiple: SHIFT + left mouse button
+                            Deselect single: STRG + left mouse button
+
+                            Deselect all: Press right mouse button
+
+                            Rename selected: SHIFT + R
+
+                            Delete selected: Back space
+                            Delete all: ENTF
+
+                            Select all: STRG + A
+
+                            Set selected as start node: SHIFT + S
+                            Set selected as end node: SHIFT + E
+
+                            Start dijkstra path animation: SHIFT + P
+                            Start dijkstra progress animation: ALT + P
+
+                            Undo action: STRG + Z
+                            Redo action: STRG + Y
+
+                            Duplicate selected: SHIFT + D
+
+                            Copy selected: STRG + C
+                            Past selected: STRG + V
+
+                            Toggle weights: SHIFT + T
+
+                            Save file: STRG + S
+                            Load file: STRG + O
+
+                            Snap to local grid: Drag + STRG
+                            Snap to global grid: Drag + ALT""",
                     ButtonType.CLOSE);
             dialog.setTitle("Information");
             dialog.setHeaderText("Graph-Program created by Lennard Stubbe");
@@ -569,12 +579,6 @@ public class Controller implements Initializable {
         }
         keyEvent.consume();
     }
-
-    private void globalOnKeyReleased(KeyEvent keyEvent) {
-        switch (keyEvent.getCode()) {
-        }
-        keyEvent.consume();
-    }
     //endregion
 
     //region Menu methods
@@ -825,7 +829,6 @@ public class Controller implements Initializable {
 
     public void onGraphDragged(MouseEvent event) {
         if (node2 != null) {
-            event.isControlDown();
             node2.moveNode(event);
         }
     }

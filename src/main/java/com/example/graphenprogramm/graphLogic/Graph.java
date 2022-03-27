@@ -109,48 +109,48 @@ public class Graph
      * Returns a string with the debugged graph
      */
     public static String debugGraph(List<Node> nodes) {
-        String graphString = "";
+        StringBuilder graphString = new StringBuilder();
 
         for (Node node : nodes) {
-            graphString += node.getName() + " (" + node.getID() + ") " + " | ";
+            graphString.append(node.getName()).append(" (").append(node.getID()).append(") ").append(" | ");
 
             if (node.getEdges().size() > 0) {
                 for (Edge edge : node.getEdges()) {
                     if (edge.getNode1().equals(node)) {
                         if (edge.isPointToNode1()) {
-                            graphString += " <";
+                            graphString.append(" <");
                         }
 
-                        graphString += " -(" + edge.getLength() + ")- ";
+                        graphString.append(" -(").append(edge.getLength()).append(")- ");
 
                         if (edge.isPointToNode2()) {
-                            graphString += "> ";
+                            graphString.append("> ");
                         }
 
-                        graphString += edge.getNode2().getName();
+                        graphString.append(edge.getNode2().getName());
                     } else if (edge.getNode2().equals(node)) {
 
                         if (edge.isPointToNode2()) {
-                            graphString += " <";
+                            graphString.append(" <");
                         }
 
-                        graphString += " -(" + edge.getLength() + ")- ";
+                        graphString.append(" -(").append(edge.getLength()).append(")- ");
 
                         if (edge.isPointToNode1()) {
-                            graphString += "> ";
+                            graphString.append("> ");
                         }
 
-                        graphString += edge.getNode1().getName();
+                        graphString.append(edge.getNode1().getName());
                     }
 
-                    graphString += " | ";
+                    graphString.append(" | ");
                 }
             }
 
-            graphString += "\n";
+            graphString.append("\n");
         }
 
-        return graphString;
+        return graphString.toString();
     }
 
     @Override

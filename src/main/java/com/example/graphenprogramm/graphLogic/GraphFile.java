@@ -11,7 +11,7 @@ import java.util.List;
 
 public class GraphFile implements Serializable {
     private List<Node> savedNodes;
-    private boolean saveExtraInformation;
+    private final boolean saveExtraInformation;
 
     public GraphFile(List<NodeUI> nodes, boolean saveExtraInformation) {
         this.saveExtraInformation = saveExtraInformation;
@@ -136,22 +136,22 @@ public class GraphFile implements Serializable {
 
                     //Set weight text with check if the length is decimal or not
                     String length = String.valueOf(workEdge.getLength());
-                    String holeNumber = "";
+                    StringBuilder holeNumber = new StringBuilder();
                     boolean reachedComma = false;
-                    String commaNumber = "";
+                    StringBuilder commaNumber = new StringBuilder();
                     for (int i = 0; i < length.length(); i++) {
                         if (reachedComma) {
-                            commaNumber += length.charAt(i);
+                            commaNumber.append(length.charAt(i));
                         } else if (length.charAt(i) != '.') {
-                            holeNumber += length.charAt(i);
+                            holeNumber.append(length.charAt(i));
                         } else if (length.charAt(i) == '.') {
                             reachedComma = true;
                         }
                     }
-                    if (Double.parseDouble(commaNumber) > 0)
+                    if (Double.parseDouble(commaNumber.toString()) > 0)
                         edgeUI.contentBtn.setText(length);
                     else
-                        edgeUI.contentBtn.setText(holeNumber);
+                        edgeUI.contentBtn.setText(holeNumber.toString());
 
                     //Set arrow visibility
                     edgeUI.setArrowAVisible(edgeUI.EDGE.isPointToNode1());
