@@ -1,3 +1,10 @@
+/*
+ * This product was created by Lennard Stubbe
+ * and is licensed under the CC BY-NC-SA license.
+ * Thus, the product may be changed and shared as desired,
+ * but not for commercial use.
+ */
+
 package com.example.graphenprogramm;
 
 import com.example.graphenprogramm.graphLogic.Algorithm.Algorithm;
@@ -982,6 +989,8 @@ public class Controller implements Initializable {
      * Delete all the nodes and edges
      */
     public static void deleteAll(boolean createBackup) {
+        Algorithm.animationIsPlaying = false;
+
         //Add to undo backup files
         if (createBackup)
             undoFiles.add(new GraphFile(nodes, true));
